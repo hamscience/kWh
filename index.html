@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>전기 에너지 수업</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap">
+<style>
+html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+/* 레이아웃: PPT처럼 1600×900 무대 한 장을 창 크기에 맞춰 확대·축소. 위: 학습지 문장(빈칸) / 아래: 크게 움직이는 시뮬레이션 */
+:root{
+  color-scheme:dark;
+  --bg:#05070c; --panel:#10151f; --panel2:#182030; --line:#2a3448;
+  --fg:#f4f6fb; --muted:#a6afc2; --dim:#5d687f;
+  --plus:#ff5d5d; --minus:#4ea8ff; --spark:#ffd23f; --ok:#3fd99a; --bad:#ff7a7a;
+  --wire:#39445c; --atom:#7c705f; --hit:#a855f7; --copper:#e08a4a; --nichrome:#9aa5ba; --water:#3ec5ff; --white:#ffffff;
+  --f-fun:'Black Han Sans','Noto Sans KR',sans-serif;
+  --f-body:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-weight:500;font-size:16px;overflow:hidden;line-height:1.5;word-break:keep-all}
+button{font:inherit;color:inherit}
+#app{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);min-width:0}
+.crumb{font-size:15px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.crumb b{color:var(--fg);font-weight:700}
+.kwbar{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.kw{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:15px;border:1px solid var(--line);color:var(--dim);font-size:15px;font-weight:700;transition:all .35s}
+.kw i{font-style:normal}.kw span{display:none}
+.kw.done{color:var(--muted);border-color:var(--dim)}
+.kw.now{background:var(--minus);border-color:var(--minus);color:#04121f}
+.kw.now span{display:inline}
+
+.mid{min-height:0;display:grid;grid-template-columns:minmax(0,1fr)}
+#deck{position:relative;overflow:hidden;min-height:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%);transform-origin:center center}
+.slide{position:absolute;inset:0;overflow:hidden;padding:34px 64px;cursor:pointer}
+.sl{height:100%;display:flex;flex-direction:column;justify-content:center;gap:20px}
+.sl.fill{justify-content:flex-start}
+.hd{display:flex;flex-direction:column;gap:2px}
+.eyebrow{font-size:26px;font-weight:700;color:var(--minus)}
+h2{font-weight:900;font-size:46px;line-height:1.2;margin:0;letter-spacing:-.02em}
+.ws{font-size:46px;font-weight:700;line-height:1.5;background:var(--panel);border-left:7px solid var(--minus);border-radius:0 14px 14px 0;padding:14px 26px;margin:0}
+.ws p{margin:0}
+.ws.sm{font-size:41px}
+.ws.box{border:3px dashed var(--dim);border-radius:14px}
+.ws .cap{display:block;font-size:30px;color:var(--muted);font-weight:700;margin-bottom:2px}
+.paren{color:var(--muted);font-weight:500;font-size:.88em}
+.lead{font-size:38px;margin:0;line-height:1.5;font-weight:700}
+.big{font-size:48px;line-height:1.4;font-weight:900;margin:0}
+.muted{color:var(--muted)}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;min-height:0}
+.cols>*{min-width:0}
+.col{display:flex;flex-direction:column;gap:20px;min-height:0}
+.simbox{position:relative;flex:1;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.simbox canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ov{position:absolute;top:14px;right:16px;display:flex;gap:10px;align-items:center;z-index:2}
+.note{font-size:28px;line-height:1.55;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:0}
+.note b{color:var(--fg)}
+.p{color:var(--plus);font-weight:900}.m{color:var(--minus);font-weight:900}
+.hint{font-size:24px;color:var(--muted);margin:0}
+
+.blank{display:inline-block;min-width:2.6em;padding:0 .35em;margin:0 .08em;border:4px dashed var(--dim);border-radius:8px;color:transparent;text-align:center;line-height:1.25;font-weight:900;transition:color .3s,border-color .3s,background .3s}
+.blank.nextup{border-color:var(--fg);animation:breathe 1.6s ease-in-out infinite}
+.blank.on{color:var(--spark);border-style:solid;border-color:color-mix(in srgb,var(--spark) 60%,transparent);background:color-mix(in srgb,var(--spark) 14%,transparent);animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+.step{opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s;pointer-events:none}
+.step.on{opacity:1;transform:none;pointer-events:auto}
+@keyframes pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+@keyframes breathe{50%{border-color:var(--dim)}}
+
+.tool{height:56px;padding:0 22px;border-radius:28px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:25px;font-weight:700;color:var(--fg)}
+.tool:hover{border-color:var(--muted)}
+.tool.sel{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.toolrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ctrl{display:grid;grid-template-columns:auto 1fr auto;gap:18px 18px;align-items:center;font-size:28px;font-weight:700}
+.ctrl input[type=range]{width:100%;height:30px;accent-color:var(--spark)}
+.ctrl output{color:var(--spark);min-width:2.4em;text-align:right;font-weight:900;font-size:32px}
+.lbl2{font-size:24px;color:var(--muted);font-weight:700}
+.readout{font-size:34px;font-weight:900;background:var(--panel2);border-radius:14px;padding:14px 20px}
+.readout b{color:var(--spark)}
+
+.bot{display:flex;align-items:center;gap:12px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-top:1px solid var(--line)}
+.nav{height:44px;padding:0 18px;border-radius:22px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px}
+.nav:hover{border-color:var(--muted)}
+.nav.primary{background:var(--spark);border-color:var(--spark);color:#1b1500}
+.nav:disabled{opacity:.35;cursor:default}
+.nav:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--spark);outline-offset:2px}
+.meter{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--spark);width:0;transition:width .4s}
+.meta{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dots{display:flex;gap:5px;align-items:center}
+.dots b{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--dim)}
+.dots b.on{background:var(--spark);border-color:var(--spark)}
+#fsBtn{width:44px;padding:0;justify-content:center}
+:fullscreen .top,:fullscreen .bot{padding-block:4px}
+@media (max-width:560px){#homeBtn{padding:0 10px}.kw{padding:0 8px}.nav{padding:0 12px}#fsBtn,#pvBtn{display:none}.crumb{font-size:12px}}
+
+/* 표지 */
+.cover .sl{align-items:flex-start;gap:34px}
+.bursts{display:flex;gap:90px;align-items:flex-end}
+.burst{display:flex;flex-direction:column;gap:8px}
+.burst strong{font-family:var(--f-fun);font-weight:400;font-size:150px;line-height:1;color:var(--minus);display:inline-block;animation:zap 2.6s infinite}
+.burst:nth-child(2) strong{color:var(--spark);animation-delay:1.3s}
+.burst span{font-size:34px;color:var(--muted)}
+@keyframes zap{0%,62%,100%{transform:none;text-shadow:none}66%{transform:translate(-3px,1px) rotate(-2deg);text-shadow:0 0 22px currentColor}70%{transform:translate(3px,-1px) rotate(1.5deg)}74%{transform:none;text-shadow:0 0 12px currentColor}}
+.cover h1{font-weight:900;font-size:100px;margin:0;line-height:1.15;letter-spacing:-.02em}
+.cover .unit{font-size:30px;color:var(--muted);font-weight:700}
+.go{font-size:26px;color:var(--muted);border:1px solid var(--line);padding:10px 18px;border-radius:24px}
+
+.kwgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:10px;min-height:230px}
+.kcard i{font-style:normal;color:var(--minus);font-size:28px;font-weight:900}
+.kcard b{font-weight:900;font-size:46px;line-height:1.2}
+.kcard small{color:var(--muted);font-size:26px}
+.kcard.last{border-style:dashed}.kcard.last i{color:var(--muted)}
+
+/* 스위치 두 칸 */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1;min-height:0}
+.panel{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.ph{font-size:31px;font-weight:900;background:var(--panel2);border-radius:12px;padding:8px 16px;text-align:center}
+.pcap{font-size:42px;font-weight:700;text-align:center;margin:0}
+
+/* 비유 표 */
+.atbl{width:100%;border-collapse:separate;border-spacing:10px;table-layout:fixed}
+.atbl td,.atbl th{background:var(--panel);border:1px solid var(--line);border-radius:14px;text-align:center;padding:20px 6px;font-size:38px;font-weight:900}
+.atbl th{background:var(--panel2);color:var(--water)}
+.atbl .rowh{font-size:26px;color:var(--muted);width:6.2em}
+.atbl td .blank{min-width:2.4em}
+
+.atbl.cmp{border-spacing:8px 6px;margin:-6px 0}
+.atbl.cmp td,.atbl.cmp th{font-size:32px;padding:8px 4px;transition:border-color .3s,background .3s}
+.atbl.cmp .rowh{font-size:22px}
+.atbl.cmp .hl{border:3px solid var(--spark);background:color-mix(in srgb,var(--spark) 12%,var(--panel))}
+/* 정리 */
+.sum{display:grid;gap:18px}
+.srow{display:grid;grid-template-columns:5.2em 1fr;gap:26px;align-items:baseline;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 30px;font-size:38px;line-height:1.45}
+.srow b{font-weight:900;color:var(--spark)}
+.punch{font-weight:900;font-size:48px;line-height:1.35;margin:0}
+.punch em{font-style:normal;color:var(--spark)}
+
+/* 최종정리 표 */
+.ftbl{width:100%;border-collapse:separate;border-spacing:8px;table-layout:fixed}
+.ftbl th,.ftbl td{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 16px;font-size:36px;font-weight:700;text-align:center;vertical-align:middle;line-height:1.4}
+.ftbl tr:first-child th{background:var(--panel2);color:var(--minus);font-size:44px;font-weight:900}
+.ftbl .rh{width:3.4em;background:var(--panel2);font-size:34px;font-weight:900}
+.ftbl .blank{min-width:5em;margin:0}
+.ftbl td .fi{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ftbl td .fi+.fi{margin-top:16px}
+.ftbl .fl{font-size:28px;color:var(--muted)}
+.choices.grid5{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chead,.choices.pairs2 button{display:grid;grid-template-columns:2.2em 1fr 1fr auto;gap:8px;align-items:center;text-align:center}
+.chead{font-size:28px;font-weight:900;color:var(--muted);padding:0 20px}
+.choices.pairs2 button .mk{min-width:0;margin-left:0}
+.choices.pairs2 button i{font-style:normal}
+/* 문제 */
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.qhead h2{font-size:44px}
+.ptabs{display:flex;gap:8px}
+.ptabs span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);font-size:22px;font-weight:900;color:var(--muted)}
+.ptabs span.now{background:var(--minus);color:#04121f;border-color:var(--minus)}
+.lvl{font-size:22px;padding:2px 12px;border-radius:12px;border:1px solid var(--line);color:var(--muted);margin-left:10px;vertical-align:middle;font-weight:700}
+.qtext{font-size:34px;margin:0;line-height:1.5}
+.qtext u{text-decoration-thickness:3px;text-underline-offset:6px;color:var(--spark)}
+.choices{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.choices button{width:100%;text-align:left;border:2px solid var(--line);background:var(--panel);border-radius:12px;padding:11px 18px;cursor:pointer;font-size:31px;font-weight:500;line-height:1.35;display:flex;gap:12px;align-items:center;transition:border-color .2s,background .2s}
+.choices button:hover{border-color:var(--muted)}
+.choices button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--panel))}
+.choices button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--panel));animation:shake .35s}
+.choices button .mk{margin-left:auto;font-size:24px;font-weight:900;white-space:nowrap}
+.choices button.right .mk{color:var(--ok)}.choices button.wrong .mk{color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.sol{background:var(--panel2);border:2px solid var(--spark);border-radius:14px;padding:18px 24px;font-size:30px;line-height:1.5}
+.sol b{color:var(--spark);font-weight:900}
+.bogi{border:1px solid var(--line);border-radius:12px;padding:14px 22px;font-size:30px;margin:0;line-height:1.55}
+.bogi p{margin:2px 0}
+.solbtn{align-self:flex-start}
+.qtbl{width:100%;border-collapse:collapse;font-size:30px;text-align:center}
+.qtbl td,.qtbl th{border:1px solid var(--line);padding:10px}
+.qtbl th{background:var(--panel2);color:var(--muted)}
+
+/* 발표자 보기 */
+body.presenter .mid{grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:14px;padding-block:12px}
+body.presenter #deck{border:2px solid var(--spark);border-radius:12px;margin-left:max(16px,env(safe-area-inset-left,0px));padding-left:0;padding-right:0}
+#pv{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pvrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pvlabel{font-size:15px;color:var(--muted);font-weight:700}
+.pvbox{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-shrink:0}
+.pvbox .stage{left:0;top:0;transform-origin:0 0;pointer-events:none}
+.pvnext{font-size:22px;font-weight:700;background:var(--panel2);border-radius:10px;padding:10px 14px}
+.pvnext b{color:var(--spark);font-weight:900}
+#pvNote{flex:1;min-height:0;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:19px;line-height:1.65}
+#pvNote p{margin:0 0 8px}
+#pvTimer{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;height:48px}
+.pvhelp{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 80%,transparent);display:grid;place-items:center;z-index:20;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pvcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;max-width:560px;width:100%;display:flex;flex-direction:column;gap:14px}
+.pvcard h3{margin:0;font-size:22px;font-weight:900}
+.pvcard p{margin:0;font-size:16px;color:var(--muted);line-height:1.6}
+.pvurl{display:flex;gap:8px;min-width:0}
+.pvurl input{flex:1;min-width:0;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 12px;font:inherit;font-size:15px}
+.pvcard .tool{height:44px;font-size:16px;display:inline-flex;align-items:center;text-decoration:none}
+body.presenter #pvBtn,body.presenter #fsBtn{display:none}
+@media (max-width:900px){body.presenter .mid{grid-template-columns:1fr;grid-template-rows:1fr auto}body.presenter #pv{max-height:45vh}}
+@media (prefers-reduced-motion:reduce){.burst strong,.blank.nextup{animation:none!important}}
+
+
+/* 전기 에너지 전용 */
+:root{--cW:#ff9f43;--cE:#5ad1ff}
+.cW{color:var(--cW)!important}.cE{color:var(--cE)!important}
+.burst strong{font-size:130px}
+.cover h1{font-size:88px}
+.sub2{margin:0;font-size:30px;font-weight:700;color:var(--muted)}
+.ws .ind{padding-left:1.2em;font-weight:500}
+.eqline{font-size:44px;font-weight:900;text-align:center;background:var(--panel);border-radius:16px;padding:14px}
+.formula{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;background:var(--panel);border:3px solid var(--cE);border-radius:18px;padding:22px 30px;font-size:58px;font-weight:900}
+.label{background:#f4f6f9;color:#1b1f27;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:2px;font-size:24px}
+.label .lh{font-weight:900;font-size:28px;border-bottom:3px solid #1b1f27;padding-bottom:6px;margin-bottom:6px}
+.label .lh small{font-size:18px;color:#5d687f;font-weight:700;margin-left:8px}
+.label .lr{display:grid;grid-template-columns:5em 1fr;gap:10px;padding:6px 4px;border-bottom:1px solid #d5dae3}
+.label .lr span{color:#5d687f;font-weight:700}
+.label .lr.hot{background:#fff1c9;border-radius:6px}
+.qs{display:flex;flex-direction:column;gap:20px}
+.qs p{margin:0;font-size:36px;font-weight:700;line-height:1.5;background:var(--panel);border-radius:14px;padding:16px 22px}
+.qs .blank{min-width:6em}
+.ltbl th,.ltbl td{font-size:30px;padding:8px 10px}
+.ltbl tr:first-child th{font-size:34px}
+.ltbl .rh{width:7.2em;font-size:24px;line-height:1.3}
+.ltbl .rh small{display:block;font-size:18px;color:var(--muted)}
+.ctab2 th,.ctab2 td{font-size:30px;padding:12px 14px;text-align:left}
+.ctab2 th{text-align:center}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+.gl{background:#f4f6f9;border-radius:16px;padding:12px 18px;display:flex;flex-direction:column;gap:4px}
+.gh{color:#1b1f27;font-size:26px;font-weight:900}
+.gb{width:var(--w);background:var(--c);color:#fff;font-size:24px;font-weight:900;padding:1px 14px;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,0 100%)}
+.gtxt p{margin:0 0 12px;font-size:34px;font-weight:700}
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.way{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.way svg{width:100%;max-height:170px}
+.way b{font-size:30px;line-height:1.35}
+.conc{margin:0;font-size:32px;font-weight:700;line-height:1.55;background:var(--panel);border-left:7px solid var(--ok);border-radius:0 14px 14px 0;padding:16px 22px}
+.conc b{color:var(--ok)}
+.qtbl{font-size:32px}
+/* 판서: 펜·형광펜·지우개 */
+#ink{position:absolute;left:0;top:0;width:1600px;height:900px;z-index:6;pointer-events:none;touch-action:none}
+body.inking #ink{pointer-events:auto;cursor:crosshair}
+body.inking.erasing #ink{cursor:cell}
+#inkBtn.on{background:var(--spark);border-color:var(--spark);color:#1b1500}
+.inkbar{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:calc(100% - 32px);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:8px 10px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.inkbar button{height:44px;min-width:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-size:16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.inkbar button.sel{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.inkbar .sw{width:34px;min-width:34px;height:34px;padding:0;border-radius:50%;border:3px solid transparent}
+.inkbar .sw.sel{border-color:var(--fg);background:inherit;outline:2px solid var(--bg);outline-offset:-5px}
+.inkbar .sep{width:1px;height:30px;background:var(--line)}
+.inkbar svg{width:20px;height:20px;flex:none}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="crumb" id="crumb">VII. 전기와 자기 · <b>전기 에너지와 소비 전력</b></div>
+    <div class="kwbar">
+      <div class="kw" data-k="1"><i>1</i><span>소비 전력</span></div>
+      <div class="kw" data-k="2"><i>2</i><span>전력량</span></div>
+      <div class="kw" data-k="3"><i>3</i><span>에너지 전환</span></div>
+      <div class="kw" data-k="4"><i>4</i><span>효율 · 대기 전력</span></div>
+    </div>
+  </header>
+
+  <div class="mid">
+  <main id="deck"><div class="stage" id="stage">
+
+    <!-- 표지 -->
+    <section class="slide cover" data-kw="0" data-label="시작">
+      <div class="sl">
+        <div class="bursts">
+          <div class="burst"><strong>W</strong><span>소비 전력</span></div>
+          <div class="burst"><strong>Wh</strong><span>전력량</span></div>
+        </div>
+        <div class="hd" style="gap:10px">
+          <div class="unit">VII. 전기와 자기 · 5. 전기 에너지</div>
+          <h1>전기 에너지와 소비 전력</h1>
+          <p class="lead muted">전기 요금은 무엇으로 정해질까?</p>
+        </div>
+        <span class="go">화면을 누르거나 → 키를 누르면 시작해요</span>
+      </div>
+    </section>
+
+    <!-- 도입 -->
+    <section class="slide" data-kw="0" data-label="도입">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">도입</div><h2>어떤 기구가 전기를 많이 쓸까?</h2></div>
+        <p class="sub2">기구를 켜고 끄면서 전력량계가 얼마나 빨리 도는지 보세요.</p>
+        <div class="simbox"><canvas data-sim="meter" id="cvM1"></canvas>
+          <div class="ov toolrow" style="left:16px;right:auto">
+            <button class="tool" type="button" data-ctl="cvM1:d0:toggle">전등</button><button class="tool" type="button" data-ctl="cvM1:d1:toggle">선풍기</button><button class="tool" type="button" data-ctl="cvM1:d2:toggle">전기밥솥</button><button class="tool" type="button" data-ctl="cvM1:d3:toggle">헤어드라이어</button>
+          </div>
+        </div>
+        <p class="punch step" style="text-align:center;font-size:44px">켜 둔 기구가 <span class="cW">많을수록</span>, <span class="cW">센 기구일수록</span> 전력량계가 빨리 돈다!</p>
+      </div>
+    </section>
+
+    <!-- 키워드 -->
+    <section class="slide" data-kw="0" data-label="오늘의 키워드">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">학습지 · 핵심개념</div><h2>오늘의 키워드</h2></div>
+        <div class="kwgrid">
+          <div class="kcard"><i>1</i><b>소비 전력</b><small>1초 동안 쓰는 전기 에너지 · W</small></div>
+          <div class="kcard"><i>2</i><b>전력량</b><small>소비 전력 × 시간 · Wh</small></div>
+          <div class="kcard"><i>3</i><b>에너지 전환</b><small>열, 빛, 운동, 소리, 화학</small></div>
+          <div class="kcard"><i>4</i><b>효율 · 대기 전력</b><small>아껴 쓰는 방법</small></div>
+          <div class="kcard last"><i>✓</i><b>정리 · 문제</b><small>정리 문제, 확인문제</small></div>
+        </div>
+        <p class="hint">지금 배우는 키워드는 오른쪽 위에 계속 표시돼요.</p>
+      </div>
+    </section>
+
+    <!-- ① 전기 에너지 -->
+    <section class="slide" data-kw="1" data-label="1. 전기 에너지">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">1 전기 에너지와 소비 전력</div><h2>전기가 일을 한다</h2></div>
+        <div class="ws">① ( <span class="blank">전기 에너지</span> ) : 전류를 흘려 전기 기구를 작동하게 하는 에너지</div>
+        <div class="simbox"><canvas data-sim="devices" id="cvDev"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ② 소비 전력 -->
+    <section class="slide" data-kw="1" data-label="1. 소비 전력">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">1 전기 에너지와 소비 전력</div><h2>1초 동안 얼마나 쓸까?</h2></div>
+        <div class="ws sm">
+          <p>② ( <span class="blank">소비 전력</span> ) : 1초 동안 전기 기구가 사용하는 전기 에너지 [ 단위 : <span class="blank">W (와트)</span> ]</p>
+          <p class="ind">= 1W는 전기기구가 1초 동안 1J의 전기 에너지를 소비하는 것</p>
+        </div>
+        <div class="cols" style="flex:1;grid-template-columns:2.1fr 1fr">
+          <div class="simbox"><canvas data-sim="watt" data-opt='{"pair":[1,60]}' id="cvW1"></canvas></div>
+          <p class="note" style="align-self:center"><b>*J(줄)</b> : 에너지의 단위<br>1J = 1V의 전압으로 1A의 전류가 1초 동안 흐를 때의 에너지</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 소비 전력이 클수록 -->
+    <section class="slide" data-kw="1" data-label="1. 소비 전력 · 클수록">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">1 전기 에너지와 소비 전력</div><h2>소비 전력이 크면</h2></div>
+        <div class="ws">= 소비 전력이 클수록 같은 시간동안 더 ( <span class="blank">많은</span> ) 전기 에너지를 사용한다는 것</div>
+        <div class="simbox"><canvas data-sim="watt" data-opt='{"pair":[60,1500]}' id="cvW2"></canvas></div>
+      </div>
+    </section>
+
+    <!-- 소비 전력 계산 -->
+    <section class="slide" data-kw="1" data-label="1. 소비 전력 · 계산">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">1 전기 에너지와 소비 전력</div><h2>소비 전력 구하기</h2></div>
+        <div class="ws">Q. 어떤 전기 기구가 5초 동안 150J의 전기에너지를 사용한다면 이 기구의 소비 전력은? <span class="blank">150 J ÷ 5 초 = 30 W</span></div>
+        <div class="simbox"><canvas data-sim="persec" id="cvPS"></canvas></div>
+        <div class="eqline step"><b class="cW">소비 전력</b> = <b class="cE">전기 에너지</b> ÷ <b>시간(초)</b></div>
+      </div>
+    </section>
+
+    <!-- ③ 전력량 -->
+    <section class="slide" data-kw="2" data-label="1. 전력량">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">2 전력량</div><h2>오래 쓰면 더 많이 쓴다</h2></div>
+        <div class="ws sm">
+          <p>③ ( <span class="blank">전력량</span> ) : 소비 전력에 사용한 시간을 곱하여 나타낸 전기 에너지 [ 단위 : <span class="blank">Wh (와트시)</span> ]</p>
+          <p class="ind">= 1Wh는 1W의 전력을 1시간 동안 사용하였을 때의 전력량</p>
+          <p class="ind">= 일정 시간동안 소모하는 전기 에너지의 양</p>
+        </div>
+        <div class="simbox"><canvas data-sim="wh" id="cvWh"></canvas>
+          <div class="ov toolrow"><span class="lbl2">소비 전력</span><button class="tool sel" type="button" data-ctl="cvWh:P:60">전구 60 W</button><button class="tool" type="button" data-ctl="cvWh:P:1000">밥솥 1000 W</button>
+          <span class="lbl2" style="margin-left:10px">시간</span><input type="range" id="whH" min="1" max="5" step="1" value="2" data-ctl="cvWh:h" style="width:180px;accent-color:var(--spark)"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 전력량 공식 -->
+    <section class="slide" data-kw="2" data-label="1. 전력량 · 식">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">2 전력량</div><h2>전력량을 식으로</h2></div>
+        <div class="formula">전력량 = ( <span class="blank cW2">소비 전력</span> ) X ( <span class="blank">시간</span> )</div>
+        <div class="ws">Q. 소비 전력이 5000W인 밥솥을 2시간동안 사용할 때의 전력량은? <span class="blank">5000 W × 2 h = 10000 Wh</span></div>
+        <div class="cols" style="grid-template-columns:1fr 1fr;align-items:center">
+          <p class="lead step">10000 Wh = <b class="cE">10 kWh</b> <span class="muted">(1 kWh = 1000 Wh)</span></p>
+          <p class="note step"><b>**전기요금</b>은 보통 1000Wh당 약 100원 → 10 kWh면 약 <b class="cW">1000원</b></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 정리 문제 1-1 -->
+    <section class="slide" data-kw="2" data-label="정리 문제 1 · 전자레인지">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">정리 문제</div><h2>1. 전자레인지의 소비전력과 전력량 구하기</h2></div>
+        <div class="cols" style="grid-template-columns:1fr 1.6fr;align-items:center">
+          <div class="label"><div class="lh">제품사양 <small>전자레인지 뒷면 표시</small></div>
+            <div class="lr"><span>모델명</span><b>MW-30A</b></div><div class="lr"><span>정격전압</span><b>220V / 60Hz</b></div><div class="lr hot"><span>소비전력</span><b>3,300W</b></div><div class="lr"><span>제품크기</span><b>560 × 480 × 372 mm</b></div><div class="lr"><span>제품중량</span><b>13.2 kg</b></div></div>
+          <div class="qs">
+            <p>1. 이 전자레인지의 소비전력은? <span class="blank">3300 W</span></p>
+            <p>2. 이 전자레인지를 2초동안 사용했을 때 소비되는 전기에너지의 양은? <span class="blank">3300 W × 2 초 = 6600 J</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 정리 문제 1-2 -->
+    <section class="slide" data-kw="2" data-label="정리 문제 1 · 전력량과 요금">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">정리 문제 · 소비전력 3,300W</div><h2>1. 전자레인지의 소비전력과 전력량 구하기</h2></div>
+        <div class="qs">
+          <p>3. 이 전자레인지를 2시간 동안 사용했을 때의 전력량은? <span class="blank">3300 W × 2 h = 6600 Wh</span></p>
+          <p>4. 전기요금이 1kWh당 100원일 때, 이 전자레인지를 50시간 사용했을 때의 전기요금은? <span class="blank">3.3 kW × 50 h = 165 kWh → 16500원</span></p>
+        </div>
+        <p class="hint">초 → J(줄), 시간(h) → Wh(와트시). 시간 단위에 따라 답의 단위가 달라진다.</p>
+      </div>
+    </section>
+
+    <!-- 정리 문제 2 -->
+    <section class="slide" data-kw="2" data-label="정리 문제 2 · 전등 비교">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">정리 문제</div><h2>2. 같은 밝기일 때 전등 종류에 따른 전력량 비교</h2></div>
+        <div class="simbox" style="flex:none;height:250px"><canvas data-sim="lamps" id="cvLamp"></canvas></div>
+        <table class="ftbl ltbl">
+          <tr><th class="rh">종류</th><th>백열등</th><th>형광등</th><th>LED등</th></tr>
+          <tr><th class="rh">소비 전력</th><td>60W</td><td>11W</td><td>7W</td></tr>
+          <tr><th class="rh">8시간 사용할 때 전력량</th><td><span class="blank">480 Wh</span></td><td><span class="blank">88 Wh</span></td><td><span class="blank">56 Wh</span></td></tr>
+          <tr><th class="rh">30일 사용할 때 전력량</th><td><span class="blank">14400 Wh</span></td><td><span class="blank">2640 Wh</span></td><td><span class="blank">1680 Wh</span></td></tr>
+          <tr><th class="rh">한달 전기요금 <small>(1kWh당 100원)</small></th><td><span class="blank">1440원</span></td><td><span class="blank">264원</span></td><td><span class="blank">168원</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. 전기 에너지의 전환 -->
+    <section class="slide" data-kw="3" data-label="2. 전기 에너지의 전환">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">3 에너지 전환</div><h2>2. 전기 에너지의 전환</h2></div>
+        <div class="ws sm">① 전기에너지는 일상생활에서 열에너지, 빛에너지, 운동에너지, 화학에너지, 소리 에너지 등 다양한 형태로 전환되며 우리의 삶을 편리하게 해준다.</div>
+        <div class="simbox"><canvas data-sim="hub" id="cvHub"></canvas></div>
+      </div>
+    </section>
+
+    <!-- 전환 표 -->
+    <section class="slide" data-kw="3" data-label="2. 일상생활의 에너지 전환">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">3 에너지 전환</div><h2>② 일상생활에서 전기 에너지 전환</h2></div>
+        <div class="cols" style="flex:1;grid-template-columns:1fr 1.15fr">
+          <table class="ftbl ctab2">
+            <tr><th>전기기구</th><th>에너지 전환</th></tr>
+            <tr><td>전기밥솥, 인덕션</td><td>전기에너지 → ( <span class="blank">열</span> )에너지</td></tr>
+            <tr><td>세탁기, 로봇청소기</td><td>전기에너지 → ( <span class="blank">운동</span> )에너지</td></tr>
+            <tr><td>LED 전등</td><td>전기에너지 → ( <span class="blank">빛</span> )에너지</td></tr>
+            <tr><td>스피커</td><td>전기에너지 → ( <span class="blank">소리</span> )에너지</td></tr>
+            <tr><td>스마트 기기의 배터리 충전</td><td>전기에너지 → ( <span class="blank">화학</span> )에너지</td></tr>
+          </table>
+          <div class="simbox"><canvas data-sim="conv" id="cvConv"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 에너지 효율 -->
+    <section class="slide" data-kw="4" data-label="3. 에너지 효율">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">4 효율 · 대기 전력</div><h2>필요한 에너지로 얼마나 바뀔까?</h2></div>
+        <div class="ws sm">3. ( <span class="blank">에너지 효율</span> ) : 전기 기구에 공급한 전기 에너지 중에서 필요한 에너지로 전환되는 비율</div>
+        <div class="cols" style="flex:1;grid-template-columns:1.9fr 1fr">
+          <div class="simbox"><canvas data-sim="eff" id="cvEff"></canvas></div>
+          <div class="col" style="justify-content:center;gap:14px">
+            <p class="note"><b>*</b>전등 A와 B 중 에너지 효율이 더 높은 것은?</p>
+            <p class="lead step" style="font-size:30px">A : 6 J ÷ 12 J = <b>50 %</b></p>
+            <p class="lead step" style="font-size:30px">B : 6 J ÷ 8 J = <b>75 %</b></p>
+            <p class="big step" style="font-size:40px;color:var(--spark)">B가 더 효율이 높다!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 효율 ① ② -->
+    <section class="slide" data-kw="4" data-label="3. 에너지 효율 · 등급">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">4 효율 · 대기 전력</div><h2>효율이 높은 기구를 고르려면</h2></div>
+        <div class="ws sm">
+          <p>① 에너지 효율이 높은 전기기구를 사용하면 전기에너지를 더 ( <span class="blank">적게</span> ) 사용할 수 있다.</p>
+          <p>② 에너지 소비 효율 등급 : 전기기구의 에너지 소비 효율을 평가하고 등급을 부여하는 제도</p>
+          <p class="ind">- ( <span class="blank">1</span> )등급에 가까울수록 에너지 효율이 높은 것</p>
+          <p class="ind">- 소비자들이 에너지 절약 전기기구를 선택하도록 돕기 위해 운영되는 제도</p>
+        </div>
+        <div class="grade">
+          <div class="gl"><div class="gh">에너지 소비 효율 등급</div>
+            <div class="gb" style="--w:44%;--c:#1fa64a">1</div><div class="gb" style="--w:54%;--c:#7cc242">2</div><div class="gb" style="--w:64%;--c:#f2d22e">3</div><div class="gb" style="--w:74%;--c:#f39a2b">4</div><div class="gb" style="--w:84%;--c:#e53b2f">5</div></div>
+          <div class="gtxt"><p><b style="color:#3fd96b">1등급</b> 효율 높음 · 전기 적게 씀</p><p><b style="color:#ff6a5a">5등급</b> 효율 낮음 · 전기 많이 씀</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 대기 전력 -->
+    <section class="slide" data-kw="4" data-label="4. 대기 전력">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">4 효율 · 대기 전력</div><h2>꺼져 있는데도 전기를 쓴다?</h2></div>
+        <div class="ws sm">
+          <p>4. ( <span class="blank">대기 전력</span> ) : 전기기구를 실제 사용하지 않을 때 소비하는 전기 에너지</p>
+          <p>① 대기전력이 ( <span class="blank">적은</span> ) 전기기구는 에너지를 효율적으로 사용 가능</p>
+        </div>
+        <div class="simbox"><canvas data-sim="standby" id="cvSB"></canvas>
+          <div class="ov toolrow"><button class="tool" type="button" data-ctl="cvSB:sw:t" id="sbBtn">멀티탭 스위치 끄기</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 대기 전력 줄이기 -->
+    <section class="slide" data-kw="4" data-label="4. 대기 전력 · 줄이는 방법">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">4 효율 · 대기 전력</div><h2>② 대기 전력을 줄이는 방법</h2></div>
+        <div class="ways">
+          <div class="way step"><svg viewBox="0 0 200 120"><rect x="20" y="50" width="160" height="40" rx="10" fill="#e6eaf0"/><g fill="#333"><rect x="40" y="62" width="6" height="14"/><rect x="52" y="62" width="6" height="14"/><rect x="84" y="62" width="6" height="14"/><rect x="96" y="62" width="6" height="14"/></g><rect x="130" y="58" width="36" height="24" rx="6" fill="#e04b3a"/><text x="148" y="76" text-anchor="middle" font-size="14" font-weight="900" fill="#fff">OFF</text></svg><b>전원 스위치가 있는 멀티탭 사용</b></div>
+          <div class="way step"><svg viewBox="0 0 200 120"><rect x="30" y="40" width="50" height="50" rx="8" fill="#e6eaf0"/><circle cx="48" cy="65" r="5" fill="#333"/><circle cx="62" cy="65" r="5" fill="#333"/><rect x="110" y="48" width="40" height="34" rx="6" fill="#c7ccd6"/><rect x="96" y="56" width="16" height="5" fill="#9aa0aa"/><rect x="96" y="70" width="16" height="5" fill="#9aa0aa"/><path d="M150 65 C175 65 175 100 195 100" stroke="#9aa0aa" stroke-width="5" fill="none"/><path d="M86 40 L104 22 M86 22 L104 40" stroke="#ffd23f" stroke-width="4"/></svg><b>장기간 사용하지 않는 전기기구의 플러그 뽑기</b></div>
+          <div class="way step"><svg viewBox="0 0 200 120"><rect x="40" y="20" width="120" height="76" rx="8" fill="#2c3448"/><rect x="50" y="30" width="100" height="56" fill="#121722"/><circle cx="100" cy="58" r="16" fill="none" stroke="#3fd96b" stroke-width="5"/><path d="M100 38 V58" stroke="#3fd96b" stroke-width="5" stroke-linecap="round"/><rect x="88" y="96" width="24" height="10" fill="#2c3448"/></svg><b>대기 전력 차단 기능이 있는 전기기구 사용하기</b></div>
+        </div>
+        <p class="conc step">⇒ 전기 에너지 생산을 위해 화석연료를 사용하고, 이로 인해 이산화탄소 발생량이 증가하여 지구 온난화 현상이 가속되고 있으므로 <b>전기에너지를 절약하고 효율적으로 사용해야한다.</b></p>
+      </div>
+    </section>
+
+    <!-- 정리 -->
+    <section class="slide" data-kw="5" data-label="정리">
+      <div class="sl">
+        <div class="hd"><div class="eyebrow">정리</div><h2>오늘 배운 것</h2></div>
+        <div class="sum">
+          <div class="srow step"><b>소비 전력</b><span>1초 동안 쓰는 전기 에너지 · 단위 W · 1W = 1초에 1J</span></div>
+          <div class="srow step"><b>전력량</b><span>소비 전력 × 시간 · 단위 Wh · 1kWh = 1000Wh</span></div>
+          <div class="srow step"><b>에너지 전환</b><span>전기 → 열, 빛, 운동, 소리, 화학 에너지</span></div>
+          <div class="srow step"><b>아껴 쓰기</b><span>효율 높은 기구(1등급) · 대기 전력 줄이기</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 처음 질문의 답 -->
+    <section class="slide" data-kw="5" data-label="처음 질문의 답">
+      <div class="sl fill">
+        <div class="hd"><div class="eyebrow">처음 질문의 답</div><h2>전기 요금은 무엇으로 정해질까?</h2></div>
+        <div class="simbox"><canvas data-sim="meter" data-opt='{"bill":true}' id="cvM2"></canvas>
+          <div class="ov toolrow" style="left:16px;right:auto">
+            <button class="tool" type="button" data-ctl="cvM2:d0:toggle">전등</button><button class="tool" type="button" data-ctl="cvM2:d1:toggle">선풍기</button><button class="tool" type="button" data-ctl="cvM2:d2:toggle">전기밥솥</button><button class="tool" type="button" data-ctl="cvM2:d3:toggle">헤어드라이어</button>
+          </div>
+        </div>
+        <p class="punch step" style="text-align:center;font-size:44px">전기 요금 = <span class="cE">전력량(kWh)</span> × 1kWh당 요금</p>
+      </div>
+    </section>
+
+    <!-- 문제 1 -->
+    <section class="slide" data-kw="5" data-label="확인문제" data-prob="0">
+      <div class="sl">
+        <div class="qhead"><h2>확인문제</h2><div class="ptabs"></div></div>
+        <div class="cols" style="grid-template-columns:1.1fr 1fr;align-items:start">
+          <div class="col" style="gap:16px">
+            <p class="qtext"><b>1</b><br>표는 전구 A와 B를 1시간 동안 켜 두었을 때 전환된 에너지를 모두 나타낸 것이다. 이에 대한 설명으로 옳은 것을 &lt;보기&gt;에서 모두 고른 것은?</p>
+            <table class="qtbl qfig"><tr><th>구분</th><th>A</th><th>B</th></tr><tr><td>빛에너지</td><td>48000 J</td><td>36000 J</td></tr><tr><td>열에너지</td><td>16800 J</td><td>28800 J</td></tr></table>
+            <div class="sol" hidden><b>정답 ⑤</b> · A와 B 모두 1시간 동안 쓴 전기 에너지가 48000 + 16800 = 36000 + 28800 = <b>64800 J</b>로 같으므로 소비 전력도 같아요(ㄱ ○). 필요한 빛에너지 비율은 A가 48000 ÷ 64800 ≈ 74 %, B가 약 56 %라 <b>A의 효율이 더 좋아요</b>(ㄴ ○). 전구에서는 전기 에너지가 빛과 열에너지로 바뀌어요(ㄷ ○).</div>
+          </div>
+          <div class="col" style="gap:14px">
+            <div class="bogi"><p><b>보기</b></p><p>ㄱ. A와 B의 소비 전력은 같다.</p><p>ㄴ. 에너지 효율은 A가 B보다 좋다.</p><p>ㄷ. 전구에서는 전기 에너지가 빛에너지와 열에너지로 전환된다.</p></div>
+            <ol class="choices grid5" data-answer="5">
+              <li><button type="button">① ㄱ<span class="mk"></span></button></li>
+              <li><button type="button">② ㄴ<span class="mk"></span></button></li>
+              <li><button type="button">③ ㄱ, ㄷ<span class="mk"></span></button></li>
+              <li><button type="button">④ ㄴ, ㄷ<span class="mk"></span></button></li>
+              <li><button type="button">⑤ ㄱ, ㄴ, ㄷ<span class="mk"></span></button></li>
+            </ol>
+            <button class="tool solbtn" type="button">정답 · 풀이 보기</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 문제 2 -->
+    <section class="slide" data-kw="5" data-label="확인문제" data-prob="1">
+      <div class="sl">
+        <div class="qhead"><h2>확인문제</h2><div class="ptabs"></div></div>
+        <div class="cols" style="grid-template-columns:1fr 1.2fr;align-items:start">
+          <div class="col" style="gap:16px">
+            <p class="qtext"><b>2</b><br>전기기구에서 일어나는 에너지 전환을 나타낸 것으로 <u>옳지 않은</u> 것은?</p>
+            <div class="sol" hidden><b>정답 ④</b> · 드라이어는 뜨거운 바람을 내므로 전기 에너지 → <b>열에너지, 운동 에너지</b>로 전환돼요. 전기 에너지 → 화학 에너지는 배터리를 충전할 때예요.</div>
+          </div>
+          <div class="col" style="gap:14px">
+            <ol class="choices" data-answer="4">
+              <li><button type="button">① 선풍기 : 전기 에너지 → 운동 에너지<span class="mk"></span></button></li>
+              <li><button type="button">② 스피커 : 전기 에너지 → 소리 에너지<span class="mk"></span></button></li>
+              <li><button type="button">③ 전기다리미 : 전기 에너지 → 열에너지<span class="mk"></span></button></li>
+              <li><button type="button">④ 드라이어 : 전기 에너지 → 화학 에너지<span class="mk"></span></button></li>
+              <li><button type="button">⑤ 텔레비전 : 전기 에너지 → 빛에너지, 소리 에너지<span class="mk"></span></button></li>
+            </ol>
+            <button class="tool solbtn" type="button">정답 · 풀이 보기</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <canvas id="ink" aria-hidden="true"></canvas></div></main>
+  <aside id="pv" hidden>
+    <div class="pvrow"><span class="pvlabel">다음 화면</span><span class="pvlabel" id="pvNextLabel"></span></div>
+    <div class="pvbox" id="pvBox"><div class="stage" id="pvStage"></div></div>
+    <div class="pvnext" id="pvNextBlank"></div>
+    <div class="pvlabel">메모</div>
+    <div id="pvNote"></div>
+    <div class="pvrow"><button class="tool" id="pvTimer" type="button" title="눌러서 다시 시작">00:00</button><span class="pvlabel">프로젝터 창이 함께 넘어가요</span></div>
+  </aside>
+  </div>
+
+  <footer class="bot">
+    <button class="nav" id="homeBtn" type="button" title="첫 장으로 (Home 키)">⏮ 처음</button>
+    <button class="nav" id="prevBtn" type="button" aria-label="이전">◂ 이전</button>
+    <div class="meter">
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="meta"><span class="dots" id="dots"></span><span id="counter"></span></div>
+    </div>
+    <button class="nav" id="inkBtn" type="button" aria-pressed="false" title="판서 (P)">✎ 판서</button>
+    <button class="nav" id="pvBtn" type="button">발표자 보기</button>
+    <button class="nav" id="fsBtn" type="button" aria-label="전체 화면">⛶</button>
+    <button class="nav primary" id="nextBtn" type="button">다음 ▸</button>
+  </footer>
+  <div class="inkbar" id="inkBar" hidden role="toolbar" aria-label="판서 도구">
+    <button type="button" data-tool="pen" title="펜 (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>펜</button>
+    <button type="button" data-tool="hl" title="형광펜 (H)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l-4 4h6l1-1M9 15l8-8 3 3-8 8zM14 6l4 4"/></svg>형광펜</button>
+    <button type="button" data-tool="er" title="지우개 (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l9-9 6 6-6 6H8zM10 19h10"/></svg>지우개</button>
+    <span class="sep"></span>
+    <span id="inkSw" style="display:flex;gap:8px"></span>
+    <span class="sep"></span>
+    <button type="button" id="inkUndo" title="되돌리기 (Ctrl+Z)">되돌리기</button>
+    <button type="button" id="inkClear">이 장 모두 지우기</button>
+    <button type="button" id="inkClose" title="판서 끄기 (Esc)">끄기</button>
+  </div>
+  <div id="pvHelp" class="pvhelp" hidden>
+    <div class="pvcard">
+      <h3>발표자 보기 열기</h3>
+      <p>아래 주소를 노트북 화면의 새 창에서 여세요. 지금 이 창은 프로젝터 화면에 두면 됩니다. 발표자 보기에서 넘기면 이 창도 같이 넘어가요.</p>
+      <div class="pvurl"><input id="pvUrl" readonly aria-label="발표자 보기 주소"><button class="tool" id="pvCopy" type="button">복사</button></div>
+      <div class="toolrow"><a class="tool" id="pvOpen" target="_blank" rel="noopener">새 창에서 열기</a><button class="tool" id="pvClose" type="button">닫기</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const ART_URL='https://claude.ai/artifact/LPR9B1CtCzbwcH3fepPvQs';
+const cs=getComputedStyle(document.documentElement);
+const C={};['bg','panel','panel2','line','fg','muted','dim','plus','minus','spark','ok','bad','wire','atom','hit','copper','nichrome','water','white'].forEach(k=>C[k]=cs.getPropertyValue('--'+k).trim());
+const FONT='"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+const TAU=Math.PI*2, rnd=Math.random;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- 그리기 도구 ---------- */
+function txt(ctx,s,x,y,size,color,align,weight){ctx.font=`${weight||700} ${size}px ${FONT}`;ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='middle';ctx.fillText(s,x,y);}
+function elec(ctx,x,y,r,hl){
+  ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=C.minus;ctx.fill();
+  ctx.strokeStyle=C.white;ctx.lineWidth=Math.max(1.6,r*.3);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x-r*.5,y);ctx.lineTo(x+r*.5,y);ctx.stroke();
+  if(hl){ctx.beginPath();ctx.arc(x,y,r*2.3,0,TAU);ctx.strokeStyle=C.spark;ctx.lineWidth=4;ctx.stroke();}
+}
+function ion(ctx,x,y,r){
+  ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=C.plus;ctx.fill();
+  ctx.strokeStyle=C.white;ctx.lineWidth=Math.max(1.6,r*.22);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x-r*.5,y);ctx.lineTo(x+r*.5,y);ctx.moveTo(x,y-r*.5);ctx.lineTo(x,y+r*.5);ctx.stroke();
+}
+function arrow(ctx,x1,y1,x2,y2,color,w){
+  const a=Math.atan2(y2-y1,x2-x1),h=w*3.2;
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=w;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-Math.cos(a)*h*.8,y2-Math.sin(a)*h*.8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-Math.cos(a-.45)*h,y2-Math.sin(a-.45)*h);ctx.lineTo(x2-Math.cos(a+.45)*h,y2-Math.sin(a+.45)*h);ctx.closePath();ctx.fill();
+}
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function gapH(ctx,x1,x2,y,lw){ctx.fillStyle=C.panel;ctx.fillRect(x1,y-lw,x2-x1,lw*2);}
+function gapV(ctx,x,y1,y2,lw){ctx.fillStyle=C.panel;ctx.fillRect(x-lw,y1,lw*2,y2-y1);}
+function battery(ctx,cx,cy,n,lw,label){
+  const sp=Math.max(34,lw*1.7),tot=sp*n;gapH(ctx,cx-tot/2-4,cx+tot/2+4,cy,lw*.6);
+  ctx.strokeStyle=C.wire;ctx.lineWidth=lw;ctx.beginPath();
+  for(let i=0;i<n-1;i++){const x=cx-tot/2+sp*(i+.5)+sp*.18;ctx.moveTo(x,cy);ctx.lineTo(x+sp*.64,cy);}ctx.stroke();
+  for(let i=0;i<n;i++){
+    const x=cx-tot/2+sp*(i+.5);
+    ctx.fillStyle=C.fg;ctx.fillRect(x-sp*.16-3,cy-lw*1.5,6,lw*3);
+    ctx.fillStyle=C.fg;ctx.fillRect(x+sp*.12-6,cy-lw*.85,12,lw*1.7);
+  }
+  const fs=Math.max(24,lw*1.3);
+  txt(ctx,'+',cx-tot/2-fs*.2,cy-lw*1.5-fs*.6,fs*1.2,C.plus,'center',900);
+  txt(ctx,'−',cx+tot/2+fs*.2,cy-lw*1.5-fs*.6,fs*1.2,C.minus,'center',900);
+  if(label)txt(ctx,label,cx,cy+lw*1.5+fs*.75,fs*.9,C.muted);
+}
+function bulb(ctx,cx,cy,R,b){
+  if(b>0.02){const g=ctx.createRadialGradient(cx,cy,R*.3,cx,cy,R*4.2);g.addColorStop(0,`rgba(255,214,90,${.75*b})`);g.addColorStop(1,'rgba(255,214,90,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*4.2,0,TAU);ctx.fill();}
+  ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.fillStyle=b>0.02?`rgba(255,236,170,${.25+.75*b})`:C.panel2;ctx.fill();
+  ctx.lineWidth=3;ctx.strokeStyle=C.fg;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-R*.55,cy+R*.25);ctx.lineTo(cx-R*.3,cy-R*.3);ctx.arc(cx,cy-R*.3,R*.3,Math.PI,0);ctx.lineTo(cx+R*.55,cy+R*.25);ctx.strokeStyle=b>0.02?'#8a5a00':C.muted;ctx.lineWidth=3;ctx.stroke();
+}
+function switchH(ctx,x,y,len,lw,closed){
+  gapH(ctx,x,x+len,y,lw*.6);
+  ctx.fillStyle=C.fg;ctx.beginPath();ctx.arc(x,y,lw*.42,0,TAU);ctx.arc(x+len,y,lw*.42,0,TAU);ctx.fill();
+  ctx.strokeStyle=C.fg;ctx.lineWidth=lw*.4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);
+  if(closed)ctx.lineTo(x+len,y);else ctx.lineTo(x+len*.82,y-len*.55);ctx.stroke();
+}
+function resistorV(ctx,x,yc,half,lw,color){
+  gapV(ctx,x,yc-half,yc+half,lw*.6);
+  ctx.strokeStyle=C.wire;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x,yc-half);ctx.lineTo(x,yc-half*.78);ctx.moveTo(x,yc+half*.78);ctx.lineTo(x,yc+half);ctx.stroke();
+  ctx.strokeStyle=color||C.hit;ctx.lineWidth=6;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(x,yc-half*.78);
+  const n=6,amp=lw*.9;for(let i=0;i<n;i++){ctx.lineTo(x+(i%2?-amp:amp),yc-half*.78+half*1.56*(i+.5)/n);}ctx.lineTo(x,yc+half*.78);ctx.stroke();
+}
+
+/* ---------- 회로 공통 ---------- */
+function mkEls(n){const a=[];for(let i=0;i<n;i++)a.push({f:(i+rnd()*.5)/n,p1:rnd()*TAU,p2:rnd()*TAU,w1:2.5+rnd()*3,w2:2.5+rnd()*3});return a;}
+function loopAt(b,s){const L=2*(b.w+b.h);s=((s%L)+L)%L;
+  if(s<b.w)return[b.x+s,b.y];s-=b.w;if(s<b.h)return[b.x+b.w,b.y+s];s-=b.h;if(s<b.w)return[b.x+b.w-s,b.y+b.h];s-=b.w;return[b.x,b.y+b.h-s];}
+function circuit(n){return{els:mkEls(n),v:0};}
+/* o: speed, snap, lw, batt, battLabel, sw('open'|'closed'), swAt, bulbAt, bright, res, extra(ctx) */
+function drawCirc(ctx,b,st,o,dt,t){
+  const lw=o.lw||20,L=2*(b.w+b.h);
+  st.v+=((o.speed||0)-st.v)*Math.min(1,dt*(o.snap?40:4));
+  const amp=lw*(o.speed?0.18:0.3);
+  ctx.lineWidth=lw;ctx.strokeStyle=C.wire;ctx.lineJoin='round';ctx.strokeRect(b.x,b.y,b.w,b.h);
+  if(o.under)o.under(ctx);
+  st.els.forEach(e=>{e.f=((e.f-st.v*dt/L)%1+1)%1;const p=loopAt(b,e.f*L);elec(ctx,p[0]+amp*Math.sin(t*e.w1+e.p1),p[1]+amp*Math.sin(t*e.w2+e.p2),lw*.36,e.hl);});
+  if(o.res)resistorV(ctx,b.x+b.w,b.y+b.h/2,b.h*.3,lw,o.resColor);
+  battery(ctx,b.x+b.w*(o.battAt||.5),b.y+b.h,o.batt||1,lw,o.battLabel);
+  if(o.sw)switchH(ctx,b.x+b.w*(o.swAt||.18),b.y+b.h,Math.max(60,lw*3.4),lw,o.sw==='closed');
+  if(o.bulbAt!==null)bulb(ctx,b.x+b.w*(o.bulbAt||.5),b.y,lw*1.55,o.bright||0);
+  return L;
+}
+
+/* ---------- 원자 격자(충돌) ---------- */
+function Lat(rows,dens){return{rows,dens:dens||.3,w:0,sp:0,atoms:[],els:[],hits:0};}
+function layLat(l,w,sp){
+  if(Math.abs(l.w-w)<1&&Math.abs(l.sp-sp)<1)return;
+  l.w=w;l.sp=sp;l.h=l.rows*sp;l.atoms=[];
+  const cols=Math.max(3,Math.round(w/sp)),sx=w/cols;
+  for(let r=0;r<l.rows;r++)for(let c=0;c<cols;c++){const x=(c+.5)*sx+(r%2?sx*.5:0);if(x>w-sx*.25)continue;l.atoms.push({x,y:(r+.5)*sp,g:0});}
+  const n=Math.round(cols*l.rows*l.dens);l.els=[];
+  const ar=sp*.28,er=Math.max(6,sp*.11);
+  for(let i=0;i<n;i++){let x,y,ok=false,k=0;while(!ok&&k++<40){x=rnd()*w;y=er+rnd()*(l.h-2*er);ok=l.atoms.every(a=>Math.hypot(a.x-x,a.y-y)>ar+er+2);}l.els.push({x,y,vx:0,vy:(rnd()-.5)*60,cd:0,hits:0});}
+}
+function stepLat(l,dt,drift,onWrap,lineX,onCross){
+  const ar=l.sp*.28,er=Math.max(6,l.sp*.11);
+  l.atoms.forEach(a=>a.g=Math.max(0,a.g-dt*1.1));
+  l.els.forEach(e=>{
+    e.vx+=(drift-e.vx)*dt*1.4;e.vy+=(rnd()-.5)*220*dt;e.vy*=.985;
+    const px=e.x;e.x+=e.vx*dt;e.y+=e.vy*dt;e.cd-=dt;
+    if(e.y<er){e.y=er;e.vy=Math.abs(e.vy);}if(e.y>l.h-er){e.y=l.h-er;e.vy=-Math.abs(e.vy);}
+    if(lineX!=null&&px<lineX&&e.x>=lineX&&onCross)onCross(e);
+    if(e.x>l.w){e.x-=l.w;if(onWrap)onWrap(e);}if(e.x<0)e.x+=l.w;
+    for(const a of l.atoms){const dx=e.x-a.x,dy=e.y-a.y,d=Math.hypot(dx,dy)||.01;
+      if(d<ar+er){const nx=dx/d,ny=dy/d;e.x=a.x+nx*(ar+er+.5);e.y=a.y+ny*(ar+er+.5);
+        const dot=e.vx*nx+e.vy*ny;if(dot<0){e.vx-=2*dot*nx;e.vy-=2*dot*ny;}
+        if(e.cd<=0){a.g=1;l.hits++;e.hits++;e.cd=.25;e.vx*=.25;e.vy*=.6;}}}
+  });
+}
+function drawLat(ctx,l,ox,oy,opt){
+  opt=opt||{};const ar=l.sp*.28,er=Math.max(6,l.sp*.11),pad=l.sp*.15;
+  rrect(ctx,ox-pad,oy-pad,l.w+2*pad,l.h+2*pad,Math.min(40,l.sp*.6));ctx.fillStyle='#1f2636';ctx.fill();ctx.strokeStyle=C.line;ctx.lineWidth=2;ctx.stroke();
+  ctx.save();rrect(ctx,ox-pad,oy-pad,l.w+2*pad,l.h+2*pad,Math.min(40,l.sp*.6));ctx.clip();
+  l.atoms.forEach(a=>{if(a.g>0){ctx.globalAlpha=a.g*.85;ctx.beginPath();ctx.arc(ox+a.x,oy+a.y,ar*1.55,0,TAU);ctx.fillStyle=C.hit;ctx.fill();ctx.globalAlpha=1;}
+    ctx.beginPath();ctx.arc(ox+a.x,oy+a.y,ar,0,TAU);ctx.fillStyle=C.atom;ctx.fill();ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=2;ctx.stroke();});
+  l.els.forEach(e=>elec(ctx,ox+e.x,oy+e.y,er,e===opt.track));
+  ctx.restore();
+}
+
+/* ---------- 시뮬레이션들 ---------- */
+const F={};
+const CW='#ff9f43',CE='#5ad1ff',CY='#ffd23f';
+const fmt=v=>(Math.round(v*100)/100).toLocaleString('ko-KR');
+/* 아이콘 */
+function icBulb(ctx,x,y,s,on,t){
+  if(on){const g=ctx.createRadialGradient(x,y,s*.1,x,y,s*.9);g.addColorStop(0,'rgba(255,214,90,.7)');g.addColorStop(1,'rgba(255,214,90,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,s*.9,0,TAU);ctx.fill();}
+  ctx.beginPath();ctx.arc(x,y-s*.08,s*.3,0,TAU);ctx.fillStyle=on?'#fff1b8':'#3a4152';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=C.fg;ctx.stroke();
+  ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.13,y+s*.2,s*.26,s*.18);
+}
+function icFan(ctx,x,y,s,ang,on){
+  ctx.strokeStyle='#9aa0aa';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+s*.45);ctx.stroke();ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.2,y+s*.42,s*.4,8);
+  ctx.beginPath();ctx.arc(x,y-s*.08,s*.34,0,TAU);ctx.strokeStyle=C.fg;ctx.lineWidth=3;ctx.stroke();
+  for(let i=0;i<3;i++){const a=ang+i*TAU/3;ctx.beginPath();ctx.ellipse(x+Math.cos(a)*s*.16,y-s*.08+Math.sin(a)*s*.16,s*.15,s*.07,a,0,TAU);ctx.fillStyle=on?'#7cc7ff':'#4a5266';ctx.fill();}
+  ctx.beginPath();ctx.arc(x,y-s*.08,s*.05,0,TAU);ctx.fillStyle=C.fg;ctx.fill();
+}
+function icCooker(ctx,x,y,s,on,t){
+  rrect(ctx,x-s*.32,y-s*.18,s*.64,s*.5,s*.12);ctx.fillStyle=on?'#e8ecf2':'#7a8292';ctx.fill();
+  rrect(ctx,x-s*.28,y-s*.3,s*.56,s*.16,s*.08);ctx.fillStyle=on?'#cfd5df':'#5f6676';ctx.fill();
+  ctx.fillStyle=on?'#ff5d5d':'#3a3f4a';ctx.beginPath();ctx.arc(x+s*.18,y+s*.12,s*.05,0,TAU);ctx.fill();
+  if(on){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=4;for(let i=0;i<3;i++){const o=(t*30+i*16)%48;ctx.beginPath();ctx.moveTo(x-s*.12+i*s*.12,y-s*.34-o*.6);ctx.quadraticCurveTo(x-s*.06+i*s*.12,y-s*.42-o*.6,x-s*.12+i*s*.12,y-s*.5-o*.6);ctx.stroke();}}
+}
+function icDryer(ctx,x,y,s,on,t){
+  ctx.fillStyle=on?'#ff7ad9':'#5a4f62';rrect(ctx,x-s*.32,y-s*.24,s*.5,s*.28,s*.12);ctx.fill();ctx.fillRect(x-s*.2,y,s*.12,s*.36);
+  ctx.fillStyle='#2b2d33';ctx.fillRect(x+s*.16,y-s*.2,s*.08,s*.2);
+  if(on){ctx.strokeStyle=CW;ctx.lineWidth=4;for(let i=0;i<3;i++){const o=(t*80+i*20)%60;ctx.beginPath();ctx.moveTo(x+s*.3+o,y-s*.16+i*s*.08);ctx.lineTo(x+s*.42+o,y-s*.16+i*s*.08);ctx.stroke();}}
+}
+function icSpeaker(ctx,x,y,s,on,t){
+  rrect(ctx,x-s*.22,y-s*.32,s*.36,s*.64,8);ctx.fillStyle='#3a4152';ctx.fill();
+  ctx.beginPath();ctx.arc(x-s*.04,y+s*.08,s*.12,0,TAU);ctx.fillStyle='#9aa0aa';ctx.fill();ctx.beginPath();ctx.arc(x-s*.04,y-s*.18,s*.06,0,TAU);ctx.fill();
+  if(on){ctx.strokeStyle=C.hit;ctx.lineWidth=4;for(let i=0;i<3;i++){const r=s*.16+((t*40+i*14)%42);ctx.globalAlpha=1-((t*40+i*14)%42)/42;ctx.beginPath();ctx.arc(x+s*.1,y,r,-.6,.6);ctx.stroke();}ctx.globalAlpha=1;}
+}
+function icWasher(ctx,x,y,s,ang,on){
+  rrect(ctx,x-s*.3,y-s*.34,s*.6,s*.68,10);ctx.fillStyle=on?'#e8ecf2':'#7a8292';ctx.fill();
+  ctx.beginPath();ctx.arc(x,y+s*.04,s*.2,0,TAU);ctx.fillStyle='#5a7fb0';ctx.fill();ctx.strokeStyle='#cfd5df';ctx.lineWidth=4;ctx.stroke();
+  ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y+s*.04);ctx.lineTo(x+Math.cos(ang)*s*.16,y+s*.04+Math.sin(ang)*s*.16);ctx.stroke();
+}
+function icPhone(ctx,x,y,s,lv,on){
+  rrect(ctx,x-s*.17,y-s*.34,s*.34,s*.68,10);ctx.fillStyle='#2b2f3a';ctx.fill();
+  rrect(ctx,x-s*.1,y-s*.18,s*.2,s*.36,4);ctx.strokeStyle=C.fg;ctx.lineWidth=3;ctx.stroke();ctx.fillStyle=C.fg;ctx.fillRect(x-s*.04,y-s*.22,s*.08,s*.04);
+  const h=s*.32*lv;ctx.fillStyle=on?'#3fd96b':'#5d687f';ctx.fillRect(x-s*.08,y+s*.16-h,s*.16,h);
+}
+function icTV(ctx,x,y,s,led){
+  rrect(ctx,x-s*.42,y-s*.3,s*.84,s*.52,8);ctx.fillStyle='#2b2f3a';ctx.fill();ctx.fillStyle='#121722';ctx.fillRect(x-s*.36,y-s*.25,s*.72,s*.42);
+  ctx.fillStyle='#2b2f3a';ctx.fillRect(x-s*.06,y+s*.22,s*.12,s*.1);ctx.fillRect(x-s*.2,y+s*.3,s*.4,6);
+  ctx.fillStyle=led?'#ff3b3b':'#3a3f4a';ctx.beginPath();ctx.arc(x+s*.34,y+s*.18,5,0,TAU);ctx.fill();
+}
+function icMicro(ctx,x,y,s,led,t){
+  rrect(ctx,x-s*.42,y-s*.26,s*.84,s*.52,8);ctx.fillStyle='#d9dde5';ctx.fill();ctx.fillStyle='#3a4152';ctx.fillRect(x-s*.36,y-s*.2,s*.5,s*.4);
+  ctx.fillStyle='#0b0e14';ctx.fillRect(x+s*.18,y-s*.2,s*.2,s*.1);if(led)txt(ctx,'12:00',x+s*.28,y-s*.15,s*.08,'#3fd96b','center',900);
+}
+function icCharger(ctx,x,y,s,led){
+  rrect(ctx,x-s*.16,y-s*.2,s*.32,s*.36,8);ctx.fillStyle='#e6eaf0';ctx.fill();ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.1,y-s*.32,s*.05,s*.12);ctx.fillRect(x+s*.05,y-s*.32,s*.05,s*.12);
+  ctx.fillStyle=led?'#3fd96b':'#5d687f';ctx.beginPath();ctx.arc(x,y,5,0,TAU);ctx.fill();
+}
+
+/* 도입 · 처음 질문의 답: 전력량계 */
+F.meter=(cv,o)=>{
+  const D=[{n:'전등',w:60},{n:'선풍기',w:50},{n:'전기밥솥',w:1000},{n:'헤어드라이어',w:1500}];
+  let on=[false,false,false,false],kwh=0,ang=0,fan=0,disc=0;
+  const sync=()=>D.forEach((d,i)=>{const b=document.querySelector(`[data-ctl="${cv.id}:d${i}:toggle"]`);if(b)b.classList.toggle('sel',on[i]);});
+  return{set(k){const i=+k.slice(1);on[i]=!on[i];sync();},step(n){if(n===0){on=[false,false,false,false];kwh=0;sync();}},
+    draw(ctx,W,H,dt,t){
+      const P=D.reduce((a,d,i)=>a+(on[i]?d.w:0),0);kwh+=P/1000*dt;disc+=P*dt*.004;fan+=on[1]?dt*12:0;
+      const cw=W*.66/4,y=H*.48,s=Math.min(cw*.8,H*.42);
+      D.forEach((d,i)=>{const x=40+cw*(i+.5);
+        rrect(ctx,x-cw*.44,H*.2,cw*.88,H*.62,16);ctx.fillStyle=on[i]?'#1d2738':C.panel2;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=on[i]?CY:C.line;ctx.stroke();
+        if(i===0)icBulb(ctx,x,y,s,on[i],t);if(i===1)icFan(ctx,x,y,s,fan,on[i]);if(i===2)icCooker(ctx,x,y,s,on[i],t);if(i===3)icDryer(ctx,x,y,s,on[i],t);
+        txt(ctx,d.n,x,H*.72,26,C.fg,'center',900);txt(ctx,d.w+' W',x,H*.78+6,26,CW,'center',900);
+        ctx.strokeStyle=on[i]?CY:C.line;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,H*.82);ctx.lineTo(x,H*.9);ctx.lineTo(W*.78,H*.9);ctx.stroke();});
+      const mx=W*.84,my=H*.42;
+      rrect(ctx,mx-W*.11,my-H*.3,W*.22,H*.56,18);ctx.fillStyle='#e6eaf0';ctx.fill();
+      txt(ctx,'전력량계',mx,my-H*.24,22,'#333','center',900);
+      ctx.fillStyle='#0b0e14';ctx.fillRect(mx-W*.085,my-H*.18,W*.17,H*.11);
+      txt(ctx,kwh.toFixed(2),mx+W*.06,my-H*.125,Math.min(42,W*.03),'#3fd96b','right',900);txt(ctx,'kWh',mx+W*.075,my-H*.12,16,'#3fd96b','left',900);
+      ctx.save();ctx.beginPath();ctx.ellipse(mx,my+H*.08,W*.07,H*.04,0,0,TAU);ctx.fillStyle='#b9c0cc';ctx.fill();ctx.clip();
+      const sx=mx-W*.07+((disc*W*.14)%(W*.14));ctx.fillStyle='#e04b3a';ctx.fillRect(sx-5,my+H*.03,10,H*.1);ctx.restore();
+      txt(ctx,'원판이 빨리 돌수록 전기를 빨리 쓴다',mx,my+H*.19,16,'#333','center',700);
+      txt(ctx,'지금 쓰는 소비 전력',mx,H*.74,22,C.muted,'center',700);txt(ctx,P.toLocaleString('ko-KR')+' W',mx,H*.82,40,CW,'center',900);
+      if(o.bill)txt(ctx,'요금 ≈ '+Math.round(kwh*100).toLocaleString('ko-KR')+'원',mx,H*.93,32,CE,'center',900);
+      else txt(ctx,'1초 = 1시간으로 빠르게',mx,H*.93,20,C.muted,'center',700);
+    }};
+};
+
+/* 전기 에너지: 전류가 흐르면 기구가 작동 */
+F.devices=()=>{
+  let k=0,fan=0,off=0;
+  return{step(n){k=n;},draw(ctx,W,H,dt,t){
+    const on=k>=1;if(on){fan+=dt*12;off+=dt*80;}
+    const ox=W*.08,oy=H*.5;
+    rrect(ctx,ox-40,oy-60,80,120,14);ctx.fillStyle='#e6eaf0';ctx.fill();ctx.fillStyle='#333';ctx.fillRect(ox-14,oy-24,8,24);ctx.fillRect(ox+6,oy-24,8,24);
+    txt(ctx,'콘센트',ox,oy+90,24,C.muted,'center',900);
+    const xs=[.3,.5,.7,.9].map(f=>W*f),s=Math.min(W*.16,H*.5);
+    xs.forEach((x,i)=>{ctx.strokeStyle='#8a909b';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(ox+40,oy);ctx.lineTo(x-s*.55,oy+H*.3*(i%2?1:-1)*0);ctx.stroke();});
+    ctx.strokeStyle='#8a909b';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(ox+40,oy);ctx.lineTo(W*.96,oy);ctx.stroke();
+    if(on){ctx.save();ctx.setLineDash([6,18]);ctx.lineDashOffset=-off;ctx.strokeStyle=CY;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ox+40,oy);ctx.lineTo(W*.96,oy);ctx.stroke();ctx.restore();}
+    xs.forEach((x,i)=>{rrect(ctx,x-s*.5,oy-s*.62,s,s*1.04,16);ctx.fillStyle=on?'#1d2738':C.panel2;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=on?CY:C.line;ctx.stroke();
+      const y=oy-s*.1;if(i===0)icBulb(ctx,x,y,s*.9,on,t);if(i===1)icFan(ctx,x,y,s*.9,fan,on);if(i===2)icSpeaker(ctx,x,y,s*.9,on,t);if(i===3)icCooker(ctx,x,y,s*.9,on,t);
+      txt(ctx,['전등','선풍기','스피커','전기밥솥'][i],x,oy+s*.6,26,C.fg,'center',900);});
+    txt(ctx,on?'전류가 흐르면 → 전기 기구가 작동한다':'전류가 흐르지 않으면 → 작동하지 않는다',W/2,H-30,32,on?CY:C.muted,'center',900);
+  }};
+};
+
+/* 소비 전력: 1초 동안 쓰는 에너지 */
+F.watt=(cv,o)=>{
+  let tt=0;const [a,b]=o.pair;
+  return{draw(ctx,W,H,dt,t){
+    tt+=dt;if(tt>10.5)tt=0;const sec=Math.min(10,tt);
+    [[a,W*.25],[b,W*.75]].forEach(([w,x])=>{
+      const s=Math.min(W*.18,H*.45),y=H*.3;
+      if(w===1){ctx.beginPath();ctx.arc(x,y,s*.16,0,TAU);ctx.fillStyle='#3fd96b';ctx.globalAlpha=.6+.4*Math.sin(t*3);ctx.fill();ctx.globalAlpha=1;txt(ctx,'1 W 기구',x,y+s*.5,28,C.fg,'center',900);}
+      else if(w===60){icBulb(ctx,x,y,s,true,t);txt(ctx,'60 W 전구',x,y+s*.6,28,C.fg,'center',900);}
+      else{icDryer(ctx,x-20,y,s,true,t);txt(ctx,'1500 W 헤어드라이어',x,y+s*.6,28,C.fg,'center',900);}
+      const E=w*sec,max=b*10,bx=x-W*.17,bw=W*.34,by=H*.72;
+      rrect(ctx,bx,by,bw,34,10);ctx.fillStyle=C.panel2;ctx.fill();
+      rrect(ctx,bx,by,Math.max(4,bw*E/max),34,10);ctx.fillStyle=CE;ctx.fill();
+      txt(ctx,'1초에 '+w.toLocaleString('ko-KR')+' J',x,H*.64,32,CW,'center',900);
+      txt(ctx,'쓴 전기 에너지 '+Math.floor(E).toLocaleString('ko-KR')+' J',x,by+66,28,CE,'center',900);
+    });
+    txt(ctx,'⏱ '+sec.toFixed(1)+' 초',W/2,34,30,C.fg,'center',900);
+    ctx.fillStyle=C.line;ctx.fillRect(W*.5-1,60,2,H-80);
+  }};
+};
+
+/* 5초 동안 150 J */
+F.persec=()=>{
+  let tt=0;
+  return{draw(ctx,W,H,dt,t){
+    tt+=dt;if(tt>8)tt=0;const bw=W*.15,gap=W*.02,x0=(W-(5*bw+4*gap))/2,y=H*.22,h=H*.46;
+    for(let i=0;i<5;i++){const x=x0+i*(bw+gap),f=clamp(tt-i,0,1);
+      rrect(ctx,x,y,bw,h,14);ctx.fillStyle=C.panel2;ctx.fill();ctx.strokeStyle=C.line;ctx.lineWidth=2;ctx.stroke();
+      ctx.save();rrect(ctx,x,y,bw,h,14);ctx.clip();ctx.fillStyle=CE;ctx.fillRect(x,y+h*(1-f),bw,h*f);ctx.restore();
+      if(f>0)txt(ctx,'30 J',x+bw/2,y+h/2,36,f>=1?'#05202b':C.fg,'center',900);
+      txt(ctx,(i+1)+'초',x+bw/2,y+h+30,26,C.muted,'center',900);}
+    const tot=Math.round(clamp(tt,0,5)*30);
+    txt(ctx,'모두 '+tot+' J',W/2,H*.12,34,CE,'center',900);
+    txt(ctx,'1초마다 30 J씩 → 소비 전력 30 W',W/2,H-28,32,CW,'center',900);
+  }};
+};
+
+/* 전력량 = 소비 전력 × 시간 (그래프 넓이) */
+F.wh=()=>{
+  let P=60,h=2,shown=0;
+  return{set(k,v){if(k==='P')P=+v;if(k==='h')h=+v;},
+    draw(ctx,W,H,dt,t){
+      shown+=(h-shown)*Math.min(1,dt*4);
+      const ymax=P<=60?80:1200,g={x:110,y:70,w:W*.55,h:H-150};const X=v=>g.x+g.w*v/5,Y=v=>g.y+g.h-g.h*v/ymax;
+      ctx.strokeStyle=C.muted;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(g.x,g.y-10);ctx.lineTo(g.x,g.y+g.h);ctx.lineTo(g.x+g.w+10,g.y+g.h);ctx.stroke();
+      for(let i=0;i<=5;i++)txt(ctx,String(i),X(i),g.y+g.h+26,24,C.fg,'center',700);
+      txt(ctx,'시간 (h)',g.x+g.w,g.y+g.h+58,24,C.fg,'right',900);txt(ctx,'소비 전력 (W)',g.x-8,g.y-30,24,CW,'left',900);
+      txt(ctx,String(P),g.x-16,Y(P),24,CW,'right',900);
+      ctx.fillStyle='rgba(90,209,255,.35)';ctx.fillRect(X(0),Y(P),X(shown)-X(0),Y(0)-Y(P));
+      ctx.strokeStyle=CW;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(X(0),Y(P));ctx.lineTo(X(5),Y(P));ctx.stroke();
+      ctx.setLineDash([6,6]);ctx.strokeStyle=CE;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(X(shown),Y(P));ctx.lineTo(X(shown),Y(0));ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'넓이 = 전력량',(X(0)+X(shown))/2,(Y(P)+Y(0))/2,26,'#e8fbff','center',900);
+      const rx=g.x+g.w+60;
+      txt(ctx,'전력량',rx,H*.32,26,C.muted,'left',700);
+      txt(ctx,P+' W × '+h+' h',rx,H*.44,40,C.fg,'left',900);
+      txt(ctx,'= '+(P*h).toLocaleString('ko-KR')+' Wh',rx,H*.58,56,CE,'left',900);
+      if(P*h>=1000)txt(ctx,'= '+(P*h/1000)+' kWh',rx,H*.7,36,CE,'left',900);
+    }};
+};
+
+/* 전등 세 가지 */
+F.lamps=()=>{
+  return{draw(ctx,W,H,dt,t){
+    const L=[['백열등',60],['형광등',11],['LED등',7]];
+    L.forEach(([n,w],i)=>{const x=W*(.17+i*.33),y=H*.42,s=H*.6;
+      const g=ctx.createRadialGradient(x,y,4,x,y,s*.75);g.addColorStop(0,'rgba(255,230,140,.7)');g.addColorStop(1,'rgba(255,230,140,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,s*.75,0,TAU);ctx.fill();
+      if(i===0){ctx.beginPath();ctx.arc(x,y-s*.05,s*.2,0,TAU);ctx.fillStyle='#fff1b8';ctx.fill();ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.08,y+s*.13,s*.16,s*.14);
+        ctx.strokeStyle='rgba(255,93,93,.8)';ctx.lineWidth=3;for(let j=0;j<3;j++){const o=(t*30+j*12)%36;ctx.beginPath();ctx.moveTo(x-s*.15+j*s*.15,y-s*.3-o);ctx.quadraticCurveTo(x-s*.1+j*s*.15,y-s*.36-o,x-s*.15+j*s*.15,y-s*.42-o);ctx.stroke();}}
+      if(i===1){ctx.strokeStyle='#fff6d6';ctx.lineWidth=s*.07;ctx.lineCap='round';ctx.beginPath();for(let a=0;a<TAU*2.5;a+=.2){const r=s*.12;ctx.lineTo(x+Math.cos(a)*r,y-s*.22+a*s*.025);}ctx.stroke();ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.08,y+s*.12,s*.16,s*.14);}
+      if(i===2){ctx.beginPath();ctx.arc(x,y-s*.05,s*.2,Math.PI,0);ctx.fillStyle='#fffbe6';ctx.fill();ctx.fillStyle='#e6eaf0';ctx.fillRect(x-s*.2,y-s*.05,s*.4,s*.18);ctx.fillStyle='#9aa0aa';ctx.fillRect(x-s*.08,y+s*.13,s*.16,s*.14);}
+      txt(ctx,n,x-s*.48,y-s*.18,28,C.fg,'right',900);txt(ctx,w+' W',x-s*.48,y+s*.06,32,CW,'right',900);
+      const bh=H*.7*w/60;ctx.fillStyle=CE;ctx.fillRect(x+s*.42,H*.86-bh,26,bh);txt(ctx,'전력량',x+s*.42+13,H*.94,16,C.muted,'center',700);
+    });
+    txt(ctx,'세 전등 모두 밝기는 같다',W/2,24,24,C.muted,'center',700);
+  }};
+};
+
+/* 에너지 전환 허브 */
+F.hub=()=>{
+  let off=0,ang=0;
+  return{draw(ctx,W,H,dt,t){
+    off+=dt*60;ang+=dt*10;const cx=W/2,cy=H/2,R=Math.min(W*.36,H*.38);
+    const items=[['열','#ff5d5d',0],['빛',CY,1],['운동','#3fd96b',2],['소리',C.hit,3],['화학',CE,4]];
+    items.forEach(([n,c,i])=>{const a=-Math.PI/2+i*TAU/5,x=cx+Math.cos(a)*R*1.25,y=cy+Math.sin(a)*R*.95;
+      ctx.save();ctx.setLineDash([12,10]);ctx.lineDashOffset=-off;ctx.strokeStyle=c;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*90,cy+Math.sin(a)*48);ctx.lineTo(x-Math.cos(a)*70,y-Math.sin(a)*50);ctx.stroke();ctx.restore();
+      const s=96;rrect(ctx,x-104,y-60,208,120,16);ctx.fillStyle=C.panel2;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=c;ctx.stroke();
+      if(i===0)icCooker(ctx,x-40,y,s,true,t);if(i===1)icBulb(ctx,x-40,y,s,true,t);if(i===2)icFan(ctx,x-40,y,s,ang,true);if(i===3)icSpeaker(ctx,x-44,y,s,true,t);if(i===4)icPhone(ctx,x-40,y,s,.4+.5*((t*.3)%1),true);
+      txt(ctx,n,x+40,y-14,30,c,'center',900);txt(ctx,'에너지',x+40,y+20,22,c,'center',900);});
+    rrect(ctx,cx-100,cy-46,200,92,20);ctx.fillStyle=CY;ctx.globalAlpha=.85+.15*Math.sin(t*3);ctx.fill();ctx.globalAlpha=1;
+    txt(ctx,'전기 에너지',cx,cy,34,'#1b1500','center',900);
+  }};
+};
+/* 표와 함께: 기구별 전환 */
+F.conv=()=>{
+  let k=0,ang=0;const L=[['전기밥솥','열','#ff5d5d'],['세탁기','운동','#3fd96b'],['LED 전등','빛',CY],['스피커','소리',C.hit],['스마트폰 충전','화학',CE]];
+  return{step(n){k=n;},draw(ctx,W,H,dt,t){
+    ang+=dt*8;const cw=W/3,rh=H/2;
+    L.forEach(([n,e,c],i)=>{const col=i%3,row=Math.floor(i/3),x=cw*(col+.5)+(row?cw*.5:0),y=rh*(row+.5),s=Math.min(cw*.7,rh*.62);
+      const done=k>i,cur=k===i+1,on=done;
+      rrect(ctx,x-cw*.44,y-rh*.44,cw*.88,rh*.88,16);ctx.fillStyle=cur?'#1d2738':C.panel2;ctx.fill();ctx.lineWidth=cur?5:2;ctx.strokeStyle=cur?c:C.line;ctx.stroke();
+      const yy=y-rh*.06;if(i===0)icCooker(ctx,x,yy,s,on,t);if(i===1)icWasher(ctx,x,yy,s,on?ang:0,on);if(i===2)icBulb(ctx,x,yy,s,on,t);if(i===3)icSpeaker(ctx,x,yy,s,on,t);if(i===4)icPhone(ctx,x,yy,s,on?.3+.6*((t*.3)%1):.2,on);
+      txt(ctx,n,x,y+rh*.3,22,C.fg,'center',900);
+      if(done)txt(ctx,'→ '+e+'에너지',x,y-rh*.36,22,c,'center',900);});
+  }};
+};
+
+/* 에너지 효율: 전등 A, B */
+F.eff=()=>{
+  return{draw(ctx,W,H,dt,t){
+    const sets=[['A',12,6,6,true],['B',8,6,2,false]];
+    sets.forEach(([n,tot,lt,ht,spiral],j)=>{const x0=W*(.06+j*.5),y=H*.5,u=H*.028;
+      const s=H*.42;
+      if(spiral){ctx.strokeStyle='#fff6d6';ctx.lineWidth=12;ctx.lineCap='round';ctx.beginPath();for(let a=0;a<TAU*2.5;a+=.2)ctx.lineTo(x0+s*.25+Math.cos(a)*s*.13,y-s*.25+a*s*.03);ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(x0+s*.25,y-s*.08,s*.2,0,TAU);ctx.fillStyle='#fff1b8';ctx.fill();}
+      ctx.fillStyle='#9aa0aa';ctx.fillRect(x0+s*.17,y+s*.12,s*.16,s*.14);
+      txt(ctx,n,x0+s*.25,y+s*.42,40,C.fg,'center',900);
+      const ax=x0+s*.5,lw=lt*u,hw=ht*u;
+      ctx.fillStyle='rgba(255,210,63,.85)';ctx.beginPath();ctx.moveTo(ax,y-lw);ctx.lineTo(ax+W*.11,y-lw-H*.18);ctx.lineTo(ax+W*.11,y-H*.18);ctx.lineTo(ax,y);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(255,93,93,.85)';ctx.beginPath();ctx.moveTo(ax,y);ctx.lineTo(ax+W*.11,y+H*.16);ctx.lineTo(ax+W*.11,y+H*.16+hw);ctx.lineTo(ax,y+hw);ctx.closePath();ctx.fill();
+      txt(ctx,'빛 '+lt+' J',ax+W*.12,y-H*.18-lw/2,28,CY,'left',900);
+      txt(ctx,'열 '+ht+' J',ax+W*.12,y+H*.16+hw/2,28,'#ff8a7a','left',900);
+      txt(ctx,'공급한 전기 에너지 '+tot+' J',x0+s*.25,H*.1,24,CE,'left',900);
+    });
+    ctx.fillStyle=C.line;ctx.fillRect(W*.5-1,20,2,H-40);
+  }};
+};
+
+/* 대기 전력 */
+F.standby=()=>{
+  let sw=true,acc=0;
+  const upd=()=>{const b=document.getElementById('sbBtn');if(b)b.textContent=sw?'멀티탭 스위치 끄기':'멀티탭 스위치 켜기';};
+  return{set(k){if(k==='sw'){sw=!sw;upd();}},step(n){if(n===0){sw=true;acc=0;upd();}},
+    draw(ctx,W,H,dt,t){
+      const P=sw?9:0;acc+=P*dt;const blink=Math.sin(t*4)>0;
+      const xs=[W*.16,W*.38,W*.6],y=H*.38,s=Math.min(W*.18,H*.5);
+      icTV(ctx,xs[0],y,s,sw&&blink);icMicro(ctx,xs[1],y,s,sw,t);icCharger(ctx,xs[2],y,s,sw&&blink);
+      ['TV (꺼짐)','전자레인지 (꺼짐)','충전기 (폰 없음)'].forEach((n,i)=>txt(ctx,n,xs[i],y+s*.48,24,C.fg,'center',900));
+      ['대기 3 W','대기 4 W','대기 2 W'].forEach((n,i)=>txt(ctx,n,xs[i],y+s*.48+30,22,sw?CW:C.dim,'center',900));
+      const tx=W*.2,ty=H*.86;rrect(ctx,tx,ty-20,W*.44,40,10);ctx.fillStyle='#e6eaf0';ctx.fill();
+      rrect(ctx,tx+W*.44-70,ty-14,56,28,6);ctx.fillStyle=sw?'#e04b3a':'#5d687f';ctx.fill();txt(ctx,sw?'ON':'OFF',tx+W*.44-42,ty,16,'#fff','center',900);
+      ctx.strokeStyle='#8a909b';ctx.lineWidth=5;xs.forEach(x=>{ctx.beginPath();ctx.moveTo(x,y+s*.48+52);ctx.lineTo(x,ty-20);ctx.stroke();});
+      txt(ctx,'멀티탭',tx-14,ty,22,C.muted,'right',900);
+      const rx=W*.84;txt(ctx,'지금 쓰는 전력',rx,H*.3,24,C.muted,'center',700);
+      txt(ctx,P+' W',rx,H*.42,72,P?CW:C.ok,'center',900);
+      txt(ctx,sw?'아무것도 안 쓰는데 계속 쓴다!':'대기 전력 0 W',rx,H*.56,26,sw?C.bad:C.ok,'center',900);
+    }};
+};
+
+/* ---------- 시뮬레이션 연결 ---------- */
+document.querySelectorAll('canvas[data-sim]').forEach(cv=>{cv._sim=F[cv.dataset.sim](cv,JSON.parse(cv.dataset.opt||'{}'));});
+function ctlFire(el,local){
+  const p=el.dataset.ctl.split(':'),cv=document.getElementById(p[0]);if(!cv||!cv._sim||!cv._sim.set)return;
+  const v=el.tagName==='INPUT'?el.value:p[2];cv._sim.set(p[1],v);
+  if(el.tagName==='BUTTON'&&p[2]!=='toggle'){el.parentNode.querySelectorAll('[data-ctl]').forEach(b=>{const q=b.dataset.ctl.split(':');if(q[1]===p[1])b.classList.toggle('sel',b===el);});}
+}
+document.querySelectorAll('button[data-ctl]').forEach(b=>b.addEventListener('click',()=>ctlFire(b)));
+document.querySelectorAll('input[data-ctl]').forEach(i=>{i.addEventListener('input',()=>ctlFire(i));ctlFire(i);});
+
+/* 문제 */
+document.querySelectorAll('.choices').forEach(ol=>{
+  const ans=+ol.dataset.answer;
+  [...ol.querySelectorAll('button')].forEach((b,i)=>b.addEventListener('click',()=>{
+    const ok=i+1===ans;b.classList.remove('wrong');void b.offsetWidth;b.classList.add(ok?'right':'wrong');
+    b.querySelector('.mk').textContent=ok?'정답!':'다시 생각해 보세요';}));
+});
+document.querySelectorAll('.solbtn').forEach(b=>b.addEventListener('click',()=>{const sl=b.closest('.slide'),s=sl.querySelector('.sol'),f=sl.querySelector('.qfig');s.hidden=!s.hidden;if(f)f.hidden=!s.hidden;b.textContent=s.hidden?'정답 · 풀이 보기':'풀이 접기';}));
+document.querySelectorAll('.qz').forEach(b=>b.addEventListener('click',()=>{const c=b.closest('.qcard'),ok=b.dataset.v===c.dataset.a;c.classList.remove('right','wrong','shown');void c.offsetWidth;c.classList.add(ok?'right':'wrong');c.querySelector('.qres').textContent=ok?'정답!':'다시!';c.querySelectorAll('.qz').forEach(x=>x.classList.toggle('sel',x===b));}));
+document.querySelectorAll('.qall').forEach(b=>b.addEventListener('click',()=>{b.closest('.slide').querySelectorAll('.qcard').forEach(c=>c.classList.add('shown'));}));
+document.querySelectorAll('[data-prob]').forEach(s=>{const k=+s.dataset.prob;s.querySelector('.ptabs').innerHTML=[0,1].map(i=>`<span class="${i===k?'now':''}">${i+1}</span>`).join('');});
+
+/* ---------- 진행 엔진 ---------- */
+const slides=[...document.querySelectorAll('#stage > .slide')];
+const stepsOf=s=>[...s.querySelectorAll('.blank,.step')];
+let cur=0,n=0;
+const kws=[...document.querySelectorAll('.kw')];
+function apply(s,k,anim){
+  const st=stepsOf(s);
+  st.forEach((e,i)=>{e.classList.toggle('on',i<k);e.classList.toggle('nextup',i===k&&e.classList.contains('blank'));});
+  s.querySelectorAll('canvas[data-sim]').forEach(cv=>{if(cv._sim&&cv._sim.step)cv._sim.step(k,anim);});
+}
+function chrome(){
+  const s=slides[cur],st=stepsOf(s),kw=+s.dataset.kw;
+  kws.forEach(k=>{const v=+k.dataset.k;k.classList.toggle('now',v===kw);k.classList.toggle('done',v<kw||kw===5);});
+  document.getElementById('crumb').innerHTML='VII. 전기와 자기 · <b>'+s.dataset.label+'</b>';
+  document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('dots').innerHTML=st.map((e,i)=>`<b class="${i<n?'on':''}"></b>`).join('');
+  document.getElementById('barFill').style.width=((cur+(st.length?n/st.length:1))/slides.length*100)+'%';
+  document.getElementById('prevBtn').disabled=cur===0&&n===0;
+  const nb=document.getElementById('nextBtn');nb.disabled=cur===slides.length-1&&n>=st.length;
+  nb.textContent=n<st.length&&st[n].classList.contains('blank')?'빈칸 ▸':'다음 ▸';
+  if(typeof send==='function'){if(!remote&&!booting)send({type:'state',cur,n});renderPv();}
+  if(typeof inkRender==='function'&&typeof inkCv!=='undefined')inkRender();
+}
+function show(i,k){slides.forEach((s,j)=>s.hidden=j!==i);cur=i;n=k;apply(slides[i],k,false);chrome();}
+function next(){const st=stepsOf(slides[cur]);if(n<st.length){n++;apply(slides[cur],n,true);chrome();}else if(cur<slides.length-1)show(cur+1,0);}
+function prev(){if(n>0){n--;apply(slides[cur],n,false);chrome();}else if(cur>0)show(cur-1,stepsOf(slides[cur-1]).length);}
+document.getElementById('nextBtn').addEventListener('click',next);
+document.getElementById('prevBtn').addEventListener('click',prev);
+const deck=document.getElementById('deck');
+deck.addEventListener('click',e=>{if(e.target.closest('button,input,label,a,.ctrl,.toolrow,.choices,.sol'))return;next();});
+document.addEventListener('keydown',e=>{
+  if(e.target.matches&&e.target.matches('input'))return;
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){if(e.key==='Enter'&&e.target.closest&&e.target.closest('button'))return;e.preventDefault();next();}
+  else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev();}
+});
+document.getElementById('fsBtn').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const p=document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>{});}}catch(err){}});
+const stage=document.getElementById('stage');
+function fit(){const c=getComputedStyle(deck);const w=deck.clientWidth-parseFloat(c.paddingLeft)-parseFloat(c.paddingRight),h=deck.clientHeight-8;const k=Math.min(w/1600,h/900);stage.style.transform=`translate(-50%,-50%) scale(${k})`;}
+fit();window.addEventListener('resize',fit);document.addEventListener('fullscreenchange',()=>setTimeout(fit,60));
+if(window.ResizeObserver)new ResizeObserver(fit).observe(deck);
+
+/* 애니메이션 루프 */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  slides[cur].querySelectorAll('canvas[data-sim]').forEach(cv=>{
+    const w=cv.offsetWidth,h=cv.offsetHeight;if(!w||!h)return;
+    const r=cv.getBoundingClientRect(),k=(r.width/w)*(window.devicePixelRatio||1);
+    const pw=Math.max(1,Math.round(w*k)),ph=Math.max(1,Math.round(h*k));
+    if(cv.width!==pw||cv.height!==ph){cv.width=pw;cv.height=ph;}
+    const ctx=cv.getContext('2d');ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,w,h);
+    try{cv._sim.draw(ctx,w,h,dt,now/1000);}catch(err){console.error(err);}
+  });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- 발표자 보기 · 창 동기화 ---------- */
+const NOTES=[
+"표지 질문: 전기 요금은 무엇으로 정해질까? 답은 '처음 질문의 답' 장에서.",
+"기구 버튼을 켜고 끄며 전력량계 원판 속도와 숫자 비교(1초 = 1시간으로 빠르게). 드라이어를 켜면 훨씬 빨라짐.|클릭: 결론 문장.",
+"학습지 순서: 소비 전력 → 전력량 → 정리 문제 → 에너지 전환 → 효율 · 대기 전력 → 확인문제.",
+"빈칸: 전기 에너지.|빈칸을 열면 콘센트에서 전류가 흐르고 기구들이 작동.",
+"빈칸: 소비 전력 → W (와트).|1 W 기구와 60 W 전구가 1초마다 쓰는 에너지 비교(10초 반복). *J(줄) 설명.",
+"빈칸: 많은.|60 W 전구와 1500 W 드라이어: 같은 10초 동안 쓰는 에너지 차이.",
+"빈칸: 150 J ÷ 5 초 = 30 W.|1초에 30 J씩 다섯 칸이 채워짐. 이어서 식 공개.",
+"빈칸: 전력량 → Wh (와트시).|그래프 넓이 = 전력량. 버튼과 막대로 소비 전력과 시간을 바꿔 보기.",
+"빈칸: 소비 전력 → 시간 → 5000 W × 2 h = 10000 Wh.|이어서 10 kWh, 약 1000원.",
+"빈칸: 3300 W → 3300 W × 2 초 = 6600 J.|초를 쓰면 J.",
+"빈칸: 6600 Wh → 3.3 kW × 50 h = 165 kWh → 16500원.|시간(h)을 쓰면 Wh.",
+"빈칸 줄 순서: 8시간(480, 88, 56 Wh) → 30일(14400, 2640, 1680 Wh) → 요금(1440, 264, 168원).|백열등은 열로 많이 버림(열기 표시).",
+"전기 에너지가 다섯 가지 에너지로 바뀌는 모습. 학생들에게 예시 기구를 말해 보게 하기.",
+"빈칸: 열 → 운동 → 빛 → 소리 → 화학.|빈칸마다 오른쪽 그림에서 해당 기구가 작동하며 강조됨.",
+"빈칸: 에너지 효율.|이어서 A 50 %, B 75 % → B가 효율이 높다.",
+"빈칸: 적게 → 1.|에너지 소비 효율 등급 라벨: 1등급에 가까울수록 효율이 높음.",
+"빈칸: 대기 전력 → 적은.|버튼: 멀티탭 스위치를 끄면 대기 전력 9 W → 0 W.",
+"클릭할 때마다 방법 카드 3개 → 마지막에 결론 문장.",
+"클릭할 때마다 한 줄씩 공개.",
+"기구를 켜면 전력량(kWh)과 요금이 함께 올라감.|클릭: 전기 요금 = 전력량(kWh) × 1kWh당 요금.",
+"정답 ⑤.|A, B 모두 64800 J → 소비 전력 같음(18 W). 빛 비율 A 74 %, B 56 %.",
+"정답 ④.|드라이어는 전기 → 열, 운동 에너지. 화학 에너지는 배터리 충전."
+];
+const isPV=location.hash==='#presenter';
+const ME=Math.random().toString(36).slice(2);
+let remote=false,booting=true,bc=null;const seen=new Set();
+try{bc=new BroadcastChannel('en-lecture-sync');}catch(e){}
+function send(m){m.from=ME;m.id=Math.random().toString(36).slice(2);try{bc&&bc.postMessage(m);}catch(e){}try{localStorage.setItem('en-sync',JSON.stringify(m));}catch(e){}}
+function recv(m){
+  if(!m||m.from===ME||seen.has(m.id))return;seen.add(m.id);remote=true;
+  try{
+    if(m.type==='hello')send({type:'state',cur,n});
+    else if(m.type==='state'){const st=stepsOf(slides[cur]).length;
+      if(m.cur===cur&&m.n===n+1)next();else if(m.cur===cur+1&&m.n===0&&n>=st)next();else if(m.cur!==cur||m.n!==n)show(m.cur,m.n);}
+    else if(m.type==='click'&&m.cur===cur){const b=deck.querySelectorAll('#stage button')[m.i];if(b)b.click();}
+    else if(m.type==='ink')inkRecv(m);
+    else if(m.type==='input'&&m.cur===cur){const el=document.getElementById(m.id);if(el){el.value=m.v;el.dispatchEvent(new Event('input'));}}
+  }finally{remote=false;}
+}
+if(bc)bc.onmessage=e=>recv(e.data);
+window.addEventListener('storage',e=>{if(e.key==='en-sync'&&e.newValue){try{recv(JSON.parse(e.newValue));}catch(_){}}});
+deck.addEventListener('click',e=>{if(!e.isTrusted)return;const b=e.target.closest('button');if(b&&stage.contains(b))send({type:'click',cur,i:[...stage.querySelectorAll('button')].indexOf(b)});},true);
+deck.addEventListener('input',e=>{if(e.isTrusted&&e.target.id)send({type:'input',cur,id:e.target.id,v:e.target.value});});
+const pvStage=document.getElementById('pvStage'),pvBox=document.getElementById('pvBox');
+function fitPv(){if(isPV)pvStage.style.transform=`scale(${pvBox.clientWidth/1600})`;}
+function renderPv(){
+  if(!isPV)return;
+  const s=slides[cur],st=stepsOf(s),nb=document.getElementById('pvNextBlank'),nl=document.getElementById('pvNextLabel');
+  if(n<st.length){const e=st[n];nb.innerHTML=e.classList.contains('blank')?`다음 빈칸 답 <b>${e.textContent.trim()}</b> <span class="pvlabel">(${n+1}/${st.length})</span>`:`다음 클릭 · 문장/그림 공개 <span class="pvlabel">(${n+1}/${st.length})</span>`;}
+  else nb.innerHTML=cur<slides.length-1?'다음 클릭 · 다음 장으로':'마지막 장이에요';
+  const ni=cur+1;pvStage.innerHTML='';
+  if(ni<slides.length){const c=slides[ni].cloneNode(true);c.hidden=false;
+    c.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));c.querySelectorAll('.on,.nextup').forEach(x=>x.classList.remove('on','nextup'));
+    c.querySelectorAll('.sol').forEach(x=>x.hidden=true);c.querySelectorAll('.qfig').forEach(x=>x.hidden=false);
+    pvStage.appendChild(c);nl.textContent=(ni+1)+'. '+slides[ni].dataset.label;}else nl.textContent='끝';
+  document.getElementById('pvNote').innerHTML=(NOTES[cur]||'').split('|').map(t=>`<p>${t}</p>`).join('');
+  fitPv();
+}
+if(isPV){
+  document.body.classList.add('presenter');document.getElementById('pv').hidden=false;
+  let t0=Date.now();const tm=document.getElementById('pvTimer');
+  setInterval(()=>{const sec=Math.floor((Date.now()-t0)/1000);tm.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');},500);
+  tm.addEventListener('click',()=>{t0=Date.now();});
+  window.addEventListener('resize',fitPv);if(window.ResizeObserver)new ResizeObserver(fitPv).observe(pvBox);
+}
+(function(){
+  const help=document.getElementById('pvHelp'),url=document.getElementById('pvUrl');
+  const inFrame=(()=>{try{return window.top!==window;}catch(e){return true;}})();
+  const link=(inFrame&&ART_URL?ART_URL:location.href.split('#')[0])+'#presenter';
+  url.value=link;document.getElementById('pvOpen').href=link;
+  document.getElementById('pvBtn').addEventListener('click',()=>{help.hidden=false;});
+  document.getElementById('pvClose').addEventListener('click',()=>{help.hidden=true;});
+  help.addEventListener('click',e=>{if(e.target===help)help.hidden=true;});
+  document.getElementById('pvCopy').addEventListener('click',()=>{const b=document.getElementById('pvCopy');const ok=()=>{b.textContent='복사됨';setTimeout(()=>b.textContent='복사',1500);};
+    try{navigator.clipboard.writeText(link).then(ok,()=>url.select());}catch(e){url.select();}});
+})();
+
+/* ---------- 판서: 펜 · 형광펜 · 지우개 ---------- */
+const inkCv=document.getElementById('ink'),inkCtx=inkCv.getContext('2d');
+inkCv.width=3200;inkCv.height=1800;
+const INK={};let inkTool=null,inkCur=null,inkColor={pen:'#ff4d4d',hl:'#ffe14d'},inkUndoStack={};
+const PENC=['#ff4d4d','#ffe14d','#4ea8ff','#ffffff','#3fd99a'],HLC=['#ffe14d','#5dff8f','#ff7ad9','#6fd3ff'];
+const inkBar=document.getElementById('inkBar'),inkBtn=document.getElementById('inkBtn');
+function inkList(i){return INK[i]||(INK[i]=[]);}
+function drawStroke(c,s){
+  if(!s.pts.length)return;c.save();c.lineCap='round';c.lineJoin='round';
+  if(s.tool==='hl'){c.globalAlpha=.48;c.strokeStyle=s.color;c.lineWidth=30;}else{c.strokeStyle=s.color;c.lineWidth=6;}
+  c.beginPath();c.moveTo(s.pts[0][0],s.pts[0][1]);
+  if(s.pts.length===1)c.lineTo(s.pts[0][0]+.1,s.pts[0][1]);
+  for(let i=1;i<s.pts.length-1;i++){const mx=(s.pts[i][0]+s.pts[i+1][0])/2,my=(s.pts[i][1]+s.pts[i+1][1])/2;c.quadraticCurveTo(s.pts[i][0],s.pts[i][1],mx,my);}
+  if(s.pts.length>1){const l=s.pts[s.pts.length-1];c.lineTo(l[0],l[1]);}
+  c.stroke();c.restore();
+}
+function inkRender(){
+  inkCtx.setTransform(2,0,0,2,0,0);inkCtx.clearRect(0,0,1600,900);
+  const L=inkList(cur);L.filter(s=>s.tool==='hl').forEach(s=>drawStroke(inkCtx,s));L.filter(s=>s.tool!=='hl').forEach(s=>drawStroke(inkCtx,s));
+  if(inkCur&&inkCur.slide===cur)drawStroke(inkCtx,inkCur);
+}
+function inkPt(e){const r=inkCv.getBoundingClientRect();return[Math.round((e.clientX-r.left)/r.width*1600*10)/10,Math.round((e.clientY-r.top)/r.height*900*10)/10];}
+function inkErase(p){
+  const L=inkList(cur),hit=[];
+  L.forEach(s=>{const rad=(s.tool==='hl'?22:14)+10;if(s.pts.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<rad))hit.push(s.id);});
+  if(hit.length){INK[cur]=L.filter(s=>!hit.includes(s.id));inkRender();send({type:'ink',op:'erase',slide:cur,ids:hit});}
+}
+inkCv.addEventListener('pointerdown',e=>{
+  if(!inkTool)return;e.preventDefault();try{inkCv.setPointerCapture(e.pointerId);}catch(_){}
+  const p=inkPt(e);
+  if(inkTool==='er'){inkCur={er:true};inkErase(p);return;}
+  inkCur={id:ME+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),slide:cur,tool:inkTool,color:inkColor[inkTool],pts:[p]};inkRender();
+});
+inkCv.addEventListener('pointermove',e=>{
+  if(!inkCur)return;const p=inkPt(e);
+  if(inkCur.er){inkErase(p);return;}
+  const l=inkCur.pts[inkCur.pts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;
+  inkCur.pts.push(p);inkRender();
+});
+function inkEnd(){
+  if(!inkCur)return;const s=inkCur;inkCur=null;
+  if(!s.er){inkList(s.slide).push(s);send({type:'ink',op:'add',slide:s.slide,stroke:s});}
+  inkRender();
+}
+inkCv.addEventListener('pointerup',inkEnd);inkCv.addEventListener('pointercancel',inkEnd);inkCv.addEventListener('lostpointercapture',inkEnd);
+inkCv.addEventListener('click',e=>e.stopPropagation());
+function inkRecv(m){
+  if(m.op==='add'){const L=inkList(m.slide);if(!L.some(s=>s.id===m.stroke.id))L.push(m.stroke);}
+  else if(m.op==='erase'){INK[m.slide]=inkList(m.slide).filter(s=>!m.ids.includes(s.id));}
+  else if(m.op==='clear'){INK[m.slide]=[];}
+  else if(m.op==='set'){INK[m.slide]=m.strokes;}
+  inkRender();
+}
+function inkSwatches(){
+  const box=document.getElementById('inkSw');box.innerHTML='';
+  const t=inkTool==='hl'?'hl':'pen';if(inkTool==='er'){box.style.display='none';return;}box.style.display='flex';
+  (t==='hl'?HLC:PENC).forEach(c=>{const b=document.createElement('button');b.type='button';b.className='sw'+(inkColor[t]===c?' sel':'');b.style.background=c;b.setAttribute('aria-label','색 '+c);
+    b.addEventListener('click',()=>{inkColor[t]=c;inkSwatches();});box.appendChild(b);});
+}
+function inkSet(tool){
+  inkTool=tool;document.body.classList.toggle('inking',!!tool);document.body.classList.toggle('erasing',tool==='er');
+  inkBar.hidden=!tool;inkBtn.classList.toggle('on',!!tool);inkBtn.setAttribute('aria-pressed',tool?'true':'false');
+  inkBar.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('sel',b.dataset.tool===tool));inkSwatches();
+}
+inkBtn.addEventListener('click',()=>inkSet(inkTool?null:'pen'));
+inkBar.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>inkSet(b.dataset.tool)));
+document.getElementById('inkClose').addEventListener('click',()=>inkSet(null));
+document.getElementById('inkClear').addEventListener('click',()=>{INK[cur]=[];inkRender();send({type:'ink',op:'clear',slide:cur});});
+document.getElementById('inkUndo').addEventListener('click',inkUndo);
+function inkUndo(){const L=inkList(cur);if(!L.length)return;const s=L.pop();inkRender();send({type:'ink',op:'erase',slide:cur,ids:[s.id]});}
+document.addEventListener('keydown',e=>{
+  if(e.target.matches&&e.target.matches('input'))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();inkUndo();return;}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='p')inkSet(inkTool==='pen'?null:'pen');else if(k==='h')inkSet(inkTool==='hl'?null:'hl');else if(k==='e')inkSet(inkTool==='er'?null:'er');else if(k==='escape'&&inkTool)inkSet(null);
+});
+
+/* 처음으로 */
+document.getElementById('homeBtn').addEventListener('click',()=>{if(cur!==0||n!==0)show(0,0);});
+document.addEventListener('keydown',e=>{if(e.key==='Home'&&!(e.target.matches&&e.target.matches('input'))){e.preventDefault();if(cur!==0||n!==0)show(0,0);}});
+
+show(0,0);
+booting=false;
+send({type:'hello'});
+})();
+</script>
+
+</body>
+</html>
